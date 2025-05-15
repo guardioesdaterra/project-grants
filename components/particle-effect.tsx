@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMap } from "react-leaflet"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { ProjectData } from "@/lib/types";
@@ -16,7 +16,7 @@ const getBeneficiaryColor = (indirect_beneficiaries: number): string => {
 interface Connection {
   from: [number, number];
   to: [number, number];
-  from_project_indirect_beneficiaries: number; // UPDATED field name
+  from_project_indirect_beneficiaries: number;
 }
 
 interface ParticleEffectProps {
@@ -24,14 +24,30 @@ interface ParticleEffectProps {
   connections: Connection[];
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  speed: number;
+  size: number;
+  color: string;
+  alpha: number;
+  trail: { x: number; y: number }[];
+  trailLength: number;
+}
+
 export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
   const map = useMap()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const animationRef = useRef<number | null>(null)
-  const particlesRef = useRef<any[]>([]) 
+  const particlesRef = useRef<Particle[]>([]) 
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const [isZooming, setIsZooming] = useState(false)
+  const [isPanning, setIsPanning] = useState(false)
 
   useEffect(() => {
+    // Clear particles if no connections
     if (!connections || connections.length === 0) {
       const canvas = canvasRef.current;
       if (canvas) {
@@ -58,62 +74,125 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
     mapContainer.appendChild(canvas)
     canvasRef.current = canvas
 
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d", { alpha: true })
     if (!ctx) return; 
 
     const particles = particlesRef.current;
+    
+    // Detect map interactions to pause animations
+    const handleZoomStart = () => setIsZooming(true);
+    const handleZoomEnd = () => {
+      setTimeout(() => setIsZooming(false), 300); // Delay to ensure map has settled
+    };
+    
+    const handleMoveStart = () => setIsPanning(true);
+    const handleMoveEnd = () => {
+      setTimeout(() => setIsPanning(false), 300); // Delay to ensure map has settled
+    };
+    
+    map.on('zoomstart', handleZoomStart);
+    map.on('zoomend', handleZoomEnd);
+    map.on('movestart', handleMoveStart);
+    map.on('moveend', handleMoveEnd);
 
     const createParticles = () => {
-      connections.forEach((connection) => {
-        const fromPoint = map.latLngToContainerPoint(connection.from);
-        const toPoint = map.latLngToContainerPoint(connection.to);
+      // Skip creating particles during zooming/panning for better performance
+      if (isZooming || isPanning) return;
+      
+      // Limit max particles
+      const maxParticles = isMobile ? 50 : 100;
+      if (particles.length > maxParticles) return;
+            
+      // Process only a subset of connections each frame
+      const connectionsToProcess = isMobile ? 3 : 5;
+      const selectedConnections = connections.slice(0, Math.min(connectionsToProcess, connections.length));
+      
+      selectedConnections.forEach((connection) => {
+        try {
+          const fromPoint = map.latLngToContainerPoint(connection.from);
+          const toPoint = map.latLngToContainerPoint(connection.to);
 
-        // Reduced particle frequency
-        const particleFrequency = isMobile ? 0.004 : 0.004; // REDUCED from 0.02 : 0.05
-        if (Math.random() < particleFrequency) {
-          // Get color based on the source project's INDIRECT beneficiaries for this connection
-          const particleColor = getBeneficiaryColor(connection.from_project_indirect_beneficiaries);
-          
-          particles.push({
-            x: fromPoint.x,
-            y: fromPoint.y,
-            targetX: toPoint.x,
-            targetY: toPoint.y,
-            speed: 1 + Math.random() * (isMobile ? 1 : 2),
-            size: isMobile ? 1.5 + Math.random() * 1.5 : 2 + Math.random() * 2,
-            color: particleColor, 
-            alpha: 0.5 + Math.random() * 0.5, 
-            trail: [],
-            trailLength: Math.floor(isMobile ? 3 + Math.random() * 3 : 5 + Math.random() * 5),
-          });
+          // Even more aggressive reduction in particle frequency
+          const particleFrequency = isMobile ? 0.002 : 0.003; 
+          if (Math.random() < particleFrequency) {
+            // Get color based on the source project's beneficiaries
+            const particleColor = getBeneficiaryColor(connection.from_project_indirect_beneficiaries);
+            
+            particles.push({
+              x: fromPoint.x,
+              y: fromPoint.y,
+              targetX: toPoint.x,
+              targetY: toPoint.y,
+              speed: 0.5 + Math.random() * (isMobile ? 0.5 : 1),
+              size: isMobile ? 1 + Math.random() * 1 : 1.5 + Math.random() * 1.5,
+              color: particleColor, 
+              alpha: 0.4 + Math.random() * 0.4, 
+              trail: [],
+              trailLength: Math.floor(isMobile ? 2 + Math.random() * 2 : 3 + Math.random() * 3),
+            });
+          }
+        } catch (error) {
+          // Fail silently if points cannot be calculated
         }
       });
     };
 
     let lastFrameTime = 0;
-    const targetFPS = isMobile ? 30 : 60;
+    // Further reduced frame rate
+    const targetFPS = isMobile ? 20 : 30;
     const frameInterval = 1000 / targetFPS;
+    
+    let frameSkipCounter = 0;
+    const frameSkipThreshold = isMobile ? 2 : 1;
 
     const animate = (timestamp: number) => {
+      // Request next animation frame first
       animationRef.current = requestAnimationFrame(animate);
 
+      // Skip frames for performance
       if (timestamp - lastFrameTime < frameInterval) {
         return;
       }
+      
+      // Additional frame skipping
+      frameSkipCounter++;
+      if (frameSkipCounter < frameSkipThreshold) {
+        return;
+      }
+      frameSkipCounter = 0;
       lastFrameTime = timestamp;
+
+      // Skip rendering during zoom/pan
+      if (isZooming || isPanning) {
+        if (canvasRef.current) {
+          const currentCtx = canvasRef.current.getContext("2d");
+          if (currentCtx) {
+            currentCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }
+        }
+        return;
+      }
 
       if (!canvasRef.current) return;
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+      // Resize canvas if needed
       if (canvasRef.current.width !== mapContainer.clientWidth || canvasRef.current.height !== mapContainer.clientHeight) {
         canvasRef.current.width = mapContainer.clientWidth;
         canvasRef.current.height = mapContainer.clientHeight;
       }
 
-      createParticles();
+      // Only create particles if below max count
+      if (particles.length < (isMobile ? 50 : 100)) {
+        createParticles();
+      }
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
+      // Process particles in batches for better performance
+      const batchSize = isMobile ? 20 : 50;
+      const particlesToProcess = particles.slice(0, Math.min(batchSize, particles.length));
+      
+      for (let i = particlesToProcess.length - 1; i >= 0; i--) {
+        const p = particlesToProcess[i];
         const dx = p.targetX - p.x;
         const dy = p.targetY - p.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -126,34 +205,48 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
             p.trail.shift();
           }
 
+          // Draw trail only if it has enough points
           if (p.trail.length > 1) {
             ctx.beginPath();
             ctx.moveTo(p.trail[0].x, p.trail[0].y);
             for (let j = 1; j < p.trail.length; j++) {
               ctx.lineTo(p.trail[j].x, p.trail[j].y);
             }
-            ctx.strokeStyle = p.color.startsWith("#") ? `${p.color}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}` : p.color.replace(")", `, ${p.alpha * 0.5})`);
+            ctx.strokeStyle = p.color.startsWith("#") 
+              ? `${p.color}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}` 
+              : p.color.replace(")", `, ${p.alpha * 0.5})`);
             ctx.lineWidth = p.size * 0.5;
             ctx.stroke();
           }
 
+          // Draw particle
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color.startsWith("#") ? `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}` : p.color.replace(")", `, ${p.alpha})`);
+          ctx.fillStyle = p.color.startsWith("#") 
+            ? `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}` 
+            : p.color.replace(")", `, ${p.alpha})`);
           ctx.fill();
 
+          // Only draw glow effect on desktop
           if (!isMobile) {
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
-            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
-            const baseColorForGradient = p.color.startsWith("#") ? p.color : p.color.substring(0, p.color.lastIndexOf(","));
-            gradient.addColorStop(0, p.color.startsWith("#") ? `${baseColorForGradient}${Math.round(p.alpha * 0.7 * 255).toString(16).padStart(2, '0')}` : `${baseColorForGradient}, ${p.alpha * 0.7})`);
-            gradient.addColorStop(1, p.color.startsWith("#") ? `${baseColorForGradient}00` : `${baseColorForGradient}, 0)`);
+            ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
+            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 1.5);
+            const baseColorForGradient = p.color.startsWith("#") 
+              ? p.color 
+              : p.color.substring(0, p.color.lastIndexOf(","));
+            gradient.addColorStop(0, p.color.startsWith("#") 
+              ? `${baseColorForGradient}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}` 
+              : `${baseColorForGradient}, ${p.alpha * 0.5})`);
+            gradient.addColorStop(1, p.color.startsWith("#") 
+              ? `${baseColorForGradient}00` 
+              : `${baseColorForGradient}, 0)`);
             ctx.fillStyle = gradient;
             ctx.fill();
           }
         } else {
-          particles.splice(i, 1);
+          // Remove particles that have reached their target
+          particles.splice(particles.indexOf(p), 1);
         }
       }
     };
@@ -169,6 +262,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
           currentCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
       }
+      // Clear particles entirely on map interaction
       particles.length = 0; 
     };
 
@@ -185,8 +279,12 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
       canvasRef.current = null; 
       map.off("moveend", updateParticlesOnMapEvent);
       map.off("zoomend", updateParticlesOnMapEvent);
+      map.off('zoomstart', handleZoomStart);
+      map.off('zoomend', handleZoomEnd);
+      map.off('movestart', handleMoveStart);
+      map.off('moveend', handleMoveEnd);
     };
-  }, [map, connections, projects, isMobile]);
+  }, [map, connections, projects, isMobile, isZooming, isPanning]);
 
   return null;
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { MapContainer, TileLayer, useMap, ZoomControl } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
@@ -29,41 +29,55 @@ function MapController() {
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   useEffect(() => {
-    // Add smooth zoom
-    map.options.zoomSnap = 0.1
-    map.options.zoomDelta = 0.5
+    // Add smooth zoom with reduced precision for better performance
+    map.options.zoomSnap = isMobile ? 0.5 : 0.1
+    map.options.zoomDelta = isMobile ? 0.5 : 0.5
 
-    // Set map bounds to prevent dragging too far up/north or to poles
-    // southWest, northEast
+    // Set map bounds to prevent dragging too far
     const southWest = L.latLng(-85, -180)
-    const northEast = L.latLng(75, 180) // Limit north boundary to prevent dragging too far up
+    const northEast = L.latLng(75, 180) 
     const bounds = L.latLngBounds(southWest, northEast)
     
     map.setMaxBounds(bounds)
-    map.on('drag', function() {
-      map.panInsideBounds(bounds, { animate: false })
-    })
+    
+    // Use a more efficient, debounced approach to enforce bounds
+    let boundsCheckTimeout: number | null = null;
+    const checkBounds = () => {
+      if (boundsCheckTimeout) clearTimeout(boundsCheckTimeout);
+      boundsCheckTimeout = window.setTimeout(() => {
+        map.panInsideBounds(bounds, { animate: false });
+      }, 100);
+    };
+    map.on('drag', checkBounds);
 
     // Set initial view based on screen size
     if (isMobile) {
-      map.setView([0, 0], 3)
+      map.setView([0, 0], 2)
     } else {
       map.setView([0, 0], 3)
     }
 
-    // Handle resize events
+    // Handle resize events with debounce
+    let resizeTimeout: number | null = null;
     const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        map.setView([0, 0], 3)
-      } else {
-        map.setView([0, 0], 3)
-      }
-    }
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(() => {
+        if (window.innerWidth <= 768) {
+          map.setView(map.getCenter(), 2)
+        } else {
+          // Keep current center but adjust zoom
+          map.setView(map.getCenter(), map.getZoom() || 3)
+        }
+      }, 200);
+    };
 
     window.addEventListener("resize", handleResize)
 
     return () => {
       window.removeEventListener("resize", handleResize)
+      map.off('drag', checkBounds);
+      if (boundsCheckTimeout) clearTimeout(boundsCheckTimeout);
+      if (resizeTimeout) clearTimeout(resizeTimeout);
     }
   }, [map, isMobile])
 
@@ -87,30 +101,42 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [isClientMounted, setIsClientMounted] = useState(false);
 
+  // Memoize the marker icon setup to avoid redundant operations
+  const setupMarkerIcon = useCallback(() => {
+    L.Marker.prototype.options.icon = markerIcon;
+  }, []);
+
   useEffect(() => {
     // Add custom marker icon to fix Next.js Leaflet icon issue
-    L.Marker.prototype.options.icon = markerIcon
-  }, [])
+    setupMarkerIcon();
+  }, [setupMarkerIcon]);
 
   useEffect(() => {
     setIsClientMounted(true);
   }, []);
 
+  // Memoize connection generation to avoid recalculation
   useEffect(() => {
     if (projects && projects.length > 1) {
+      // Limit connections count on mobile
+      const maxConnectionsPerProject = isMobile ? 2 : 3;
       const newConnections: Connection[] = [];
-      projects.forEach(project => {
-        // Filter out the current project to select from others
-        let availableTargets = projects.filter(p => p.project_title !== project.project_title);
+      
+      // Process fewer projects on mobile to improve performance
+      const projectsToProcess = isMobile ? projects.slice(0, Math.min(15, projects.length)) : projects;
+      
+      projectsToProcess.forEach(project => {
+        // Filter out the current project
+        let availableTargets = projectsToProcess.filter(p => p.project_title !== project.project_title);
         
-        // Number of connections to make for this project
-        const connectionsToMake = Math.min(3, availableTargets.length); // NOW 3 CONNECTIONS
+        // Limit connections per project
+        const connectionsToMake = Math.min(maxConnectionsPerProject, availableTargets.length);
 
         for (let i = 0; i < connectionsToMake; i++) {
-          if (availableTargets.length === 0) break; // No more unique targets
+          if (availableTargets.length === 0) break;
 
           const randomIndex = Math.floor(Math.random() * availableTargets.length);
-          const targetProject = availableTargets.splice(randomIndex, 1)[0]; // Select and remove to avoid self-connection within this loop for this source
+          const targetProject = availableTargets.splice(randomIndex, 1)[0];
           
           if (targetProject) {
             newConnections.push({
@@ -125,8 +151,9 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
     } else {
       setDynamicConnections([]);
     }
-  }, [projects]);
+  }, [projects, isMobile]);
 
+  // Clean up map on unmount
   useEffect(() => {
     const map = mapRef.current;
     return () => {
@@ -187,21 +214,39 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           overflow: visible !important;
           z-index: 99999999;
         }
+        
+        /* Mobile-specific improvements */
+        @media (max-width: 768px) {
+          .leaflet-control-zoom a {
+            width: 40px !important;
+            height: 40px !important;
+            line-height: 40px !important;
+            font-size: 20px !important;
+          }
+          .leaflet-popup-content-wrapper {
+            max-width: 90vw;
+            font-size: 14px;
+          }
+        }
       `}</style>
 
-      {/* Background gradients */}
-      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-cyan-900/30 pointer-events-none z-[399]"></div>
-      <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-purple-900/20 pointer-events-none z-[399]"></div>
+      {/* Background gradients - reduced complexity on mobile */}
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-cyan-900/20 pointer-events-none z-[399]"></div>
+      {!isMobile && <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-purple-900/20 pointer-events-none z-[399]"></div>}
 
-      {/* Scanline overlay */}
-      <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-5 pointer-events-none z-[999999999] "></div>
+      {/* Scanline overlay - disabled on mobile */}
+      {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-5 pointer-events-none z-[999999999]"></div>}
 
-      {/* Animated background elements */}
+      {/* Animated background elements - simplified on mobile */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[398]">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10">
+        <div className={`absolute top-0 left-0 w-full h-full ${isMobile ? 'opacity-5' : 'opacity-10'}`}>
           <div className="absolute top-0 left-0 w-1/3 h-1/3 bg-cyan-500/20 blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-purple-500/20 blur-3xl animate-pulse-slow-delay"></div>
-          <div className="absolute top-1/2 right-1/4 w-1/4 h-1/4 bg-pink-500/20 blur-3xl animate-pulse-slow-delay-2"></div>
+          {!isMobile && (
+            <>
+              <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-purple-500/20 blur-3xl animate-pulse-slow-delay"></div>
+              <div className="absolute top-1/2 right-1/4 w-1/4 h-1/4 bg-pink-500/20 blur-3xl animate-pulse-slow-delay-2"></div>
+            </>
+          )}
         </div>
       </div>
 
@@ -211,10 +256,12 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         zoomControl={false}
         attributionControl={false}
         worldCopyJump={true}
-        minZoom={3.5}
-        maxZoom={9}
+        minZoom={isMobile ? 2 : 3}
+        maxZoom={isMobile ? 8 : 9}
         scrollWheelZoom={true}
         dragging={true}
+        doubleClickZoom={true}
+        tap={true}
         placeholder={<div style={{width: "100%", height: "100%", backgroundColor: "#000000", display: "flex", alignItems: "center", justifyContent: "center"}}><div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse mr-2"></div>Initializing Map...</div>}
       >
         <TileLayer
@@ -225,7 +272,8 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         <ZoomControl position="bottomleft" />
         <MapController />
 
-        {showHexGrid && <HexGrid />}
+        {/* Only show HexGrid on desktop or if explicitly enabled */}
+        {(showHexGrid && (!isMobile || isClientMounted)) && <HexGrid />}
         <ConnectionLines connections={dynamicConnections} />
 
         {projects.map((project, index) => (
@@ -240,14 +288,19 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           />
         ))}
 
-        <ParticleEffect projects={projects} connections={dynamicConnections} />
+        {/* Only show particles on desktop or newer mobile devices */}
+        {(!isMobile || isClientMounted) && <ParticleEffect projects={projects} connections={dynamicConnections} />}
       </MapContainer>
 
       {/* Map controls */}
       <MapControls onToggleHexGrid={() => setShowHexGrid(!showHexGrid)} showHexGrid={showHexGrid} />
 
-      {/* Global stats panel - positioned differently on mobile */}
-      <div className={`absolute z-[500] ${isClientMounted && isMobile ? "bottom-4 left-4 right-4" : "bottom-4 right-4 w-96"}`}>
+      {/* Global stats panel - improved responsive positioning */}
+      <div className={`absolute z-[500] transition-all duration-300 ${
+        isClientMounted && isMobile 
+          ? "bottom-16 left-4 right-4 max-h-[40vh] overflow-auto rounded-lg" 
+          : "bottom-4 right-4 w-96"
+      }`}>
         <GlobalStats projects={projects} />
       </div>
     </div>
