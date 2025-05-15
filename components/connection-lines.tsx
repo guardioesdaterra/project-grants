@@ -208,7 +208,23 @@ const CyberpunkOverlay = memo(({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          
+          {/* Add logo as a pattern */}
+          <pattern id="logo-pattern" patternUnits="userSpaceOnUse" width="300" height="400" patternTransform="scale(0.5) rotate(0)">
+            <image href="https://images.squarespace-cdn.com/content/v1/5e66bef295469c229eeb5cfc/b259693d-7e2d-4ede-9d11-7297305c50aa/EG-Logo-Tall.jpg" 
+                  x="0" y="0" width="300" height="400" opacity="0.15" />
+          </pattern>
         </defs>
+        
+        {/* Background logo */}
+        <rect 
+          x="0" 
+          y="0" 
+          width="100%" 
+          height="100%" 
+          fill="url(#logo-pattern)" 
+          opacity={intensity === 'normal' ? "0.08" : intensity === 'high' ? "0.1" : "0.12"}
+        />
         
         {/* Random scan lines */}
         <g>{scanLines}</g>
