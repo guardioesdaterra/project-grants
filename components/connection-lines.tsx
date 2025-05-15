@@ -319,7 +319,7 @@ const colorPalettes = {
 };
 
 // Default performance configuration
-const DEFAULT_MAX_CONNECTIONS = 21;
+const DEFAULT_MAX_CONNECTIONS = 5;
 const DEFAULT_CURVE_STEPS = 21;
 const DEFAULT_ANIMATION_INTERVAL = 40; // Faster animation speed for cyberpunk feel
 
