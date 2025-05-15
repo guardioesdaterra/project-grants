@@ -83,7 +83,7 @@ const CyberpunkOverlay = memo(({
               y2={y} 
               stroke={intensity === 'extreme' ? (Math.random() > 0.5 ? '#0ff' : '#f0f') : '#0ff'} 
               strokeWidth={intensity === 'extreme' ? "2" : "1"} 
-              opacity={0.03 + Math.random() * (0.05 * intensityFactor)}
+              opacity={0.1 + Math.random() * (0.15 * intensityFactor)}
             />
           );
         }
@@ -110,9 +110,9 @@ const CyberpunkOverlay = memo(({
                                intensity === 'high' ? "4" : 
                                "5"; // extreme
               
-              const strokeOpacity = intensity === 'normal' ? "0.2" : 
-                                 intensity === 'high' ? "0.3" : 
-                                 "0.4"; // extreme
+              const strokeOpacity = intensity === 'normal' ? "0.4" : 
+                                 intensity === 'high' ? "0.5" : 
+                                 "0.6"; // extreme
               
               return (
                 <line 
@@ -212,7 +212,7 @@ const CyberpunkOverlay = memo(({
           {/* Add logo as a pattern */}
           <pattern id="logo-pattern" patternUnits="userSpaceOnUse" width="300" height="400" patternTransform="scale(0.5) rotate(0)">
             <image href="https://images.squarespace-cdn.com/content/v1/5e66bef295469c229eeb5cfc/b259693d-7e2d-4ede-9d11-7297305c50aa/EG-Logo-Tall.jpg" 
-                  x="0" y="0" width="300" height="400" opacity="0.15" />
+                  x="0" y="0" width="300" height="400" opacity="0.25" />
           </pattern>
         </defs>
         
@@ -223,7 +223,7 @@ const CyberpunkOverlay = memo(({
           width="100%" 
           height="100%" 
           fill="url(#logo-pattern)" 
-          opacity={intensity === 'normal' ? "0.08" : intensity === 'high' ? "0.1" : "0.12"}
+          opacity={intensity === 'normal' ? "0.15" : intensity === 'high' ? "0.2" : "0.25"}
         />
         
         {/* Random scan lines */}
@@ -240,7 +240,7 @@ const CyberpunkOverlay = memo(({
             width="100%" 
             height="100%" 
             fill="url(#cyberpunk-noise)" 
-            opacity={intensity === 'normal' ? "0.02" : intensity === 'high' ? "0.03" : "0.04"}
+            opacity={intensity === 'normal' ? "0.05" : intensity === 'high' ? "0.08" : "0.1"}
           />
         )}
         
@@ -262,7 +262,7 @@ const CyberpunkOverlay = memo(({
                   width={`${width}%`}
                   height={`${height}%`}
                   fill={color}
-                  opacity={intensity === 'normal' ? "0.05" : intensity === 'high' ? "0.07" : "0.1"}
+                  opacity={intensity === 'normal' ? "0.1" : intensity === 'high' ? "0.15" : "0.2"}
                 />
               );
             })}
@@ -735,18 +735,18 @@ export function ConnectionLines({
         
         /* Create more intense pulsing effect for the cyberpunk glow */
         @keyframes pulse-glow {
-          0% { filter: drop-shadow(0 0 3px rgba(10, 255, 255, 0.6)); }
-          25% { filter: drop-shadow(0 0 5px rgba(255, 16, 240, 0.7)); }
-          50% { filter: drop-shadow(0 0 8px rgba(57, 255, 20, 0.9)); }
-          75% { filter: drop-shadow(0 0 5px rgba(255, 42, 109, 0.7)); }
-          100% { filter: drop-shadow(0 0 3px rgba(10, 255, 255, 0.6)); }
+          0% { filter: drop-shadow(0 0 3px rgba(10, 255, 255, 0.8)); }
+          25% { filter: drop-shadow(0 0 5px rgba(255, 16, 240, 0.9)); }
+          50% { filter: drop-shadow(0 0 8px rgba(57, 255, 20, 1.0)); }
+          75% { filter: drop-shadow(0 0 5px rgba(255, 42, 109, 0.9)); }
+          100% { filter: drop-shadow(0 0 3px rgba(10, 255, 255, 0.8)); }
         }
         
         /* Add a digital data flow effect */
         @keyframes data-flow {
-          0% { stroke-dashoffset: 100; opacity: 0.7; }
+          0% { stroke-dashoffset: 100; opacity: 0.8; }
           50% { opacity: 1; }
-          100% { stroke-dashoffset: 0; opacity: 0.7; }
+          100% { stroke-dashoffset: 0; opacity: 0.8; }
         }
         
         /* Add a glitch effect animation */
