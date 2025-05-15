@@ -16,7 +16,6 @@ const nextConfig = {
     ],
   },
   reactStrictMode: false,
-  swcMinify: true,
   poweredByHeader: false,
   experimental: {
     optimizeCss: true,
