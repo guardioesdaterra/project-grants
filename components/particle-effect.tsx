@@ -69,7 +69,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
         const toPoint = map.latLngToContainerPoint(connection.to);
 
         // Reduced particle frequency
-        const particleFrequency = isMobile ? 0.001 : 0.001; // REDUCED from 0.02 : 0.05
+        const particleFrequency = isMobile ? 0.004 : 0.004; // REDUCED from 0.02 : 0.05
         if (Math.random() < particleFrequency) {
           // Get color based on the source project's INDIRECT beneficiaries for this connection
           const particleColor = getBeneficiaryColor(connection.from_project_indirect_beneficiaries);
