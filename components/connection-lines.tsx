@@ -209,14 +209,22 @@ const CyberpunkOverlay = memo(({
             </feMerge>
           </filter>
           
+          {/* Filter to invert colors */}
+          <filter id="invert-filter">
+            <feColorMatrix type="matrix" values="-1 0 0 0 1
+                                                0 -1 0 0 1
+                                                0 0 -1 0 1
+                                                0 0 0 1 0" />
+          </filter>
+          
           {/* Add logo as a pattern */}
           <pattern id="logo-pattern" patternUnits="userSpaceOnUse" width="300" height="400" patternTransform="scale(0.5) rotate(0)">
-            <image href="https://images.squarespace-cdn.com/content/v1/5e66bef295469c229eeb5cfc/b259693d-7e2d-4ede-9d11-7297305c50aa/EG-Logo-Tall.jpg" 
-                  x="0" y="0" width="300" height="400" opacity="0.25" />
+            <image href="/eg-logo.png" 
+                  x="0" y="0" width="300" height="400" opacity="0.25" filter="url(#invert-filter)" />
           </pattern>
         </defs>
         
-        {/* Background logo */}
+        {/* Background logo with animation */}
         <rect 
           x="0" 
           y="0" 
@@ -224,7 +232,16 @@ const CyberpunkOverlay = memo(({
           height="100%" 
           fill="url(#logo-pattern)" 
           opacity={intensity === 'normal' ? "0.15" : intensity === 'high' ? "0.2" : "0.25"}
-        />
+        >
+          <animate 
+            attributeName="opacity" 
+            values={`${intensity === 'normal' ? "0.13;0.17" : intensity === 'high' ? "0.18;0.22" : "0.22;0.27"}`} 
+            dur="5s" 
+            repeatCount="indefinite" 
+            calcMode="spline"
+            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          />
+        </rect>
         
         {/* Random scan lines */}
         <g>{scanLines}</g>
