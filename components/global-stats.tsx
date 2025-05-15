@@ -68,7 +68,7 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-700/20 border border-cyan-500/30 mb-0.5 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
                 <Globe className="w-4 h-4 text-cyan-400" />
               </div>
-              <span className="text-lg font-bold text-cyan-400">{formatNumber(countriesCount)}</span>
+              <span className="text-lg font-bold text-cyan-400">28</span>
               <span className="text-[11px] leading-tight text-gray-400 text-center whitespace-nowrap">Countries</span>
             </div>
             <div className="flex flex-col items-center">
@@ -76,14 +76,14 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
                 <Users className="w-4 h-4 text-purple-400" />
               </div>
               <span className="text-lg font-bold text-purple-400">{formatNumber(totalDirectBeneficiaries)}</span>
-              <span className="text-[11px] leading-tight text-gray-400 text-center whitespace-nowrap">Direct</span>
+              <span className="text-[11px] leading-tight text-gray-400 text-center whitespace-nowrap">Direct Benef.</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-700/20 border border-orange-500/30 mb-0.5 shadow-[0_0_10px_rgba(249,115,22,0.2)]">
                 <BarChart2 className="w-4 h-4 text-orange-400" />
               </div>
               <span className="text-lg font-bold text-orange-400">{formatNumber(totalIndirectBeneficiaries)}</span>
-              <span className="text-[11px] leading-tight text-gray-400 text-center whitespace-nowrap">Indirect</span>
+              <span className="text-[11px] leading-tight text-gray-400 text-center whitespace-nowrap">Indirect Benef.</span>
             </div>
           </div>
         </>
