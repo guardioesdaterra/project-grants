@@ -26,6 +26,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
   const [searchResults, setSearchResults] = useState<ProjectData[]>([])
   const searchInputRef = useRef<HTMLInputElement>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const [lastUpdatedDate, setLastUpdatedDate] = useState("");
 
   // Focus search input when search panel opens
   useEffect(() => {
@@ -33,6 +34,10 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
       searchInputRef.current.focus()
     }
   }, [showSearch])
+
+  useEffect(() => {
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []);
 
   // Search logic
   useEffect(() => {
@@ -291,7 +296,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
           </div>
           <div className="mt-3 pt-3 border-t border-cyan-900/30 text-xs text-gray-400">
             <p>EcoTrack Global v1.0</p>
-            <p>Last updated: {new Date().toLocaleDateString()}</p>
+            <p>Last updated: {lastUpdatedDate}</p>
           </div>
         </div>
       )}

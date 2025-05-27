@@ -18,7 +18,7 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
   const { activeInitiatives, countriesCount, totalDirectBeneficiaries, totalIndirectBeneficiaries } = useMemo(() => {
     const activeInitiatives = projects.length
     const uniqueCountries = new Set(projects.map(p => p.country_province))
-    const countriesCount = uniqueCountries.size
+    const countriesCount = 31
     const totalDirectBeneficiaries = projects.reduce((sum, p) => sum + p.direct_beneficiaries, 0)
     const totalIndirectBeneficiaries = projects.reduce((sum, p) => sum + p.indirect_beneficiaries, 0)
     
@@ -48,7 +48,7 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
             isExpanded ? (isMobile ? "text-base" : "text-lg") : "text-sm"
           }`}
         >
-          Global Impact
+          Earth Guardians’ 2024 Project Grants Impact
         </h2>
         <Button
           variant="ghost"

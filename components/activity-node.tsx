@@ -17,7 +17,7 @@ const getBeneficiaryColor = (indirect_beneficiaries: number): string => {
 };
 
 // getMarkerIcon now uses indirect_beneficiaries for color
-const getMarkerIcon = (indirectBeneficiaries: number, isHovered: boolean, isMobile: boolean) => {
+const getMarkerIcon = (indirectBeneficiaries: number, isHovered: boolean, isMobile: boolean, projectTitle: string) => {
   const scaleFactor = isMobile ? 0.7 : 1;
   // Size can still be based on direct or indirect, let's use indirect for consistency with color
   const beneficiaryFactor = Math.min(Math.max(indirectBeneficiaries / 10000, 0.5), 5); 
@@ -25,15 +25,16 @@ const getMarkerIcon = (indirectBeneficiaries: number, isHovered: boolean, isMobi
   const size = isHovered ? baseSize * 1.2 : baseSize;
 
   const markerColor = getBeneficiaryColor(indirectBeneficiaries);
+  const sanitizedProjectTitle = projectTitle.replace(/[^a-zA-Z0-9]/g, '');
 
   const pulseAnimation = isHovered
     ? `
-      @keyframes pulse-marker-${markerColor.replace("#", "")}-${Math.random().toString(36).substring(7)} {
+      @keyframes pulse-marker-${markerColor.replace("#", "")}-${sanitizedProjectTitle} {
         0% { box-shadow: 0 0 ${beneficiaryFactor * 15}px ${markerColor}, 0 0 ${beneficiaryFactor * 3}px #fff; opacity: 0.9; transform: scale(1); }
         50% { box-shadow: 0 0 ${beneficiaryFactor * 30}px ${markerColor}, 0 0 ${beneficiaryFactor * 6}px #fff; opacity: 1; transform: scale(1.05); }
         100% { box-shadow: 0 0 ${beneficiaryFactor * 15}px ${markerColor}, 0 0 ${beneficiaryFactor * 3}px #fff; opacity: 0.9; transform: scale(1); }
       }
-      animation: pulse-marker-${markerColor.replace("#", "")}-${Math.random().toString(36).substring(7)} 1.5s infinite ease-in-out;
+      animation: pulse-marker-${markerColor.replace("#", "")}-${sanitizedProjectTitle} 1.5s infinite ease-in-out;
     `
     : "";
 
@@ -100,7 +101,7 @@ export function ActivityNode({
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Use indirect_beneficiaries for icon generation (color and size factor)
-  const icon = getMarkerIcon(indirect_beneficiaries, isHovered, isMobile);
+  const icon = getMarkerIcon(indirect_beneficiaries, isHovered, isMobile, project_title);
   // Use indirect_beneficiaries for badge color
   const badgeColor = getBeneficiaryColor(indirect_beneficiaries);
 
@@ -142,8 +143,6 @@ export function ActivityNode({
               <span>Indirect Beneficiaries: {indirect_beneficiaries.toLocaleString()}</span>
             </div>
           </div>
-
-
 
           {/* Enlarged and more visible cyberpunk corner elements */}
           <div className="absolute -top-1 -left-1 w-6 h-6 bg-cyan-500 z-500 animate-pulse" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>

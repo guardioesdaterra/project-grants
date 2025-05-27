@@ -324,12 +324,8 @@ export function ConnectionLines({
         return beneB - beneA;
       });
       
-      // Add some randomization for variety
-      const topRemaining = sortedRemaining.slice(0, Math.min(remainingSlots * 2, sortedRemaining.length));
-      const shuffledRemaining = [...topRemaining].sort(() => Math.random() - 0.5);
-      
       // Add as many as we have space for
-      additionalConnections = shuffledRemaining.slice(0, remainingSlots);
+      additionalConnections = sortedRemaining.slice(0, remainingSlots);
     }
     
     // Combine guaranteed and additional connections
