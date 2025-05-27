@@ -5,12 +5,12 @@ import { useMap } from "react-leaflet"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { ProjectData } from "@/lib/types";
 
-// Updated color function based on INDIRECT beneficiaries and user's tiers
+// Color function with better visibility
 const getBeneficiaryColor = (indirect_beneficiaries: number): string => {
-  if (indirect_beneficiaries <= 100) return "#FF00FF"; // 
-  if (indirect_beneficiaries <= 500) return "#0074D9"; // Blue
-  if (indirect_beneficiaries >= 1000) return "#FF4136"; // red
-  return "#FFDC00"; // Gold/Yellow for > 1000
+  if (indirect_beneficiaries <= 100) return "#FF00FF"; // Magenta for smallest tier
+  if (indirect_beneficiaries <= 500) return "#0074D9"; // Blue for medium tier
+  if (indirect_beneficiaries >= 1000) return "#FF4136"; // Red for largest tier
+  return "#FFDC00"; // Gold/Yellow for intermediate tier
 };
 
 interface Connection {
@@ -60,6 +60,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
       return; 
     }
 
+    // Create canvas element for particles
     const canvas = document.createElement("canvas")
     canvas.style.position = "absolute"
     canvas.style.top = "0"
@@ -79,15 +80,15 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
 
     const particles = particlesRef.current;
     
-    // Detect map interactions to pause animations
+    // Map event listeners for pause/resume animations
     const handleZoomStart = () => setIsZooming(true);
     const handleZoomEnd = () => {
-      setTimeout(() => setIsZooming(false), 300); // Delay to ensure map has settled
+      setTimeout(() => setIsZooming(false), 300);
     };
     
     const handleMoveStart = () => setIsPanning(true);
     const handleMoveEnd = () => {
-      setTimeout(() => setIsPanning(false), 300); // Delay to ensure map has settled
+      setTimeout(() => setIsPanning(false), 300);
     };
     
     map.on('zoomstart', handleZoomStart);
@@ -95,71 +96,90 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
     map.on('movestart', handleMoveStart);
     map.on('moveend', handleMoveEnd);
 
+    // Function to create new particles
     const createParticles = () => {
-      // Skip creating particles during zooming/panning for better performance
+      // Skip creating particles during zooming/panning
       if (isZooming || isPanning) return;
       
-      // Limit max particles
+      // Adaptive particle limits
       const maxParticles = isMobile ? 50 : 100;
       if (particles.length > maxParticles) return;
-            
-      // Process only a subset of connections each frame
-      const connectionsToProcess = isMobile ? 3 : 5;
-      const selectedConnections = connections.slice(0, Math.min(connectionsToProcess, connections.length));
       
-      selectedConnections.forEach((connection) => {
-        try {
-          const fromPoint = map.latLngToContainerPoint(connection.from);
-          const toPoint = map.latLngToContainerPoint(connection.to);
-
-          // Even more aggressive reduction in particle frequency
-          const particleFrequency = isMobile ? 0.002 : 0.003; 
-          if (Math.random() < particleFrequency) {
-            // Get color based on the source project's beneficiaries
-            const particleColor = getBeneficiaryColor(connection.from_project_indirect_beneficiaries);
-            
-            particles.push({
-              x: fromPoint.x,
-              y: fromPoint.y,
-              targetX: toPoint.x,
-              targetY: toPoint.y,
-              speed: 0.5 + Math.random() * (isMobile ? 0.5 : 1),
-              size: isMobile ? 1 + Math.random() * 1 : 1.5 + Math.random() * 1.5,
-              color: particleColor, 
-              alpha: 0.4 + Math.random() * 0.4, 
-              trail: [],
-              trailLength: Math.floor(isMobile ? 2 + Math.random() * 2 : 3 + Math.random() * 3),
-            });
-          }
-        } catch (error) {
-          // Fail silently if points cannot be calculated
+      // Get all project origins by creating a map of from coordinates to connection arrays
+      const projectConnectionMap = new Map();
+      connections.forEach(conn => {
+        const key = `${conn.from[0]},${conn.from[1]}`;
+        if (!projectConnectionMap.has(key)) {
+          projectConnectionMap.set(key, []);
         }
+        projectConnectionMap.get(key).push(conn);
       });
+      
+      // Process connections from ALL origins - ensure we get at least one connection from each origin
+      const allProjectOrigins = Array.from(projectConnectionMap.keys());
+      
+      // Select a random subset to process each frame
+      const originsToProcess = Math.min(isMobile ? 5 : 10, allProjectOrigins.length);
+      const originsToUse = [];
+      
+      // Add origins randomly without removing from the original array
+      for (let i = 0; i < originsToProcess; i++) {
+        const randomIndex = Math.floor(Math.random() * allProjectOrigins.length);
+        originsToUse.push(allProjectOrigins[randomIndex]);
+      }
+      
+      // Process one connection from each selected origin
+      for (const originKey of originsToUse) {
+        const connectionsFromOrigin = projectConnectionMap.get(originKey);
+        if (connectionsFromOrigin && connectionsFromOrigin.length > 0) {
+          // Pick a random connection from this origin
+          const randomConnIndex = Math.floor(Math.random() * connectionsFromOrigin.length);
+          const connection = connectionsFromOrigin[randomConnIndex];
+          
+          try {
+            // Convert geo coordinates to screen coordinates
+            const fromPoint = map.latLngToContainerPoint(connection.from);
+            const toPoint = map.latLngToContainerPoint(connection.to);
+            
+            // Higher probability of particle creation to ensure visibility
+            const particleFrequency = isMobile ? 0.2 : 0.3;
+            if (Math.random() < particleFrequency) {
+              // Get color based on the source project's beneficiaries
+              const particleColor = getBeneficiaryColor(connection.from_project_indirect_beneficiaries);
+              
+              // Create a particle with better visibility
+              particles.push({
+                x: fromPoint.x,
+                y: fromPoint.y,
+                targetX: toPoint.x,
+                targetY: toPoint.y,
+                speed: 0.5 + Math.random() * (isMobile ? 0.5 : 1.0),
+                size: isMobile ? 1.2 + Math.random() * 0.8 : 1.5 + Math.random() * 1.0,
+                color: particleColor,
+                alpha: 0.5 + Math.random() * 0.3, // Higher alpha for visibility
+                trail: [],
+                trailLength: Math.floor(isMobile ? 2 + Math.random() * 1 : 3 + Math.random() * 2)
+              });
+            }
+          } catch (error) {
+            // Fail silently if points cannot be calculated
+          }
+        }
+      }
     };
 
     let lastFrameTime = 0;
-    // Further reduced frame rate
-    const targetFPS = isMobile ? 20 : 30;
+    const targetFPS = isMobile ? 20 : 30; // Back to higher FPS for smoother animation
     const frameInterval = 1000 / targetFPS;
-    
-    let frameSkipCounter = 0;
-    const frameSkipThreshold = isMobile ? 2 : 1;
 
     const animate = (timestamp: number) => {
       // Request next animation frame first
       animationRef.current = requestAnimationFrame(animate);
 
-      // Skip frames for performance
+      // Limit FPS
       if (timestamp - lastFrameTime < frameInterval) {
         return;
       }
-      
-      // Additional frame skipping
-      frameSkipCounter++;
-      if (frameSkipCounter < frameSkipThreshold) {
-        return;
-      }
-      frameSkipCounter = 0;
       lastFrameTime = timestamp;
 
       // Skip rendering during zoom/pan
@@ -182,17 +202,14 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
         canvasRef.current.height = mapContainer.clientHeight;
       }
 
-      // Only create particles if below max count
+      // Always try to create particles if below max count
       if (particles.length < (isMobile ? 50 : 100)) {
         createParticles();
       }
 
-      // Process particles in batches for better performance
-      const batchSize = isMobile ? 20 : 50;
-      const particlesToProcess = particles.slice(0, Math.min(batchSize, particles.length));
-      
-      for (let i = particlesToProcess.length - 1; i >= 0; i--) {
-        const p = particlesToProcess[i];
+      // Process all particles for immediate visibility
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
         const dx = p.targetX - p.x;
         const dy = p.targetY - p.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -205,7 +222,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
             p.trail.shift();
           }
 
-          // Draw trail only if it has enough points
+          // Draw trail
           if (p.trail.length > 1) {
             ctx.beginPath();
             ctx.moveTo(p.trail[0].x, p.trail[0].y);
@@ -213,17 +230,17 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
               ctx.lineTo(p.trail[j].x, p.trail[j].y);
             }
             ctx.strokeStyle = p.color.startsWith("#") 
-              ? `${p.color}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}` 
-              : p.color.replace(")", `, ${p.alpha * 0.5})`);
-            ctx.lineWidth = p.size * 0.5;
+              ? `${p.color}${Math.round(p.alpha * 0.6 * 255).toString(16).padStart(2, '0')}` // More visible trails
+              : p.color.replace(")", `, ${p.alpha * 0.6})`);
+            ctx.lineWidth = p.size * 0.6;
             ctx.stroke();
           }
 
-          // Draw particle
+          // Draw particle - Make the main particle more visible
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fillStyle = p.color.startsWith("#") 
-            ? `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}` 
+            ? `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}`
             : p.color.replace(")", `, ${p.alpha})`);
           ctx.fill();
 
@@ -236,7 +253,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
               ? p.color 
               : p.color.substring(0, p.color.lastIndexOf(","));
             gradient.addColorStop(0, p.color.startsWith("#") 
-              ? `${baseColorForGradient}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}` 
+              ? `${baseColorForGradient}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}`
               : `${baseColorForGradient}, ${p.alpha * 0.5})`);
             gradient.addColorStop(1, p.color.startsWith("#") 
               ? `${baseColorForGradient}00` 
@@ -246,7 +263,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
           }
         } else {
           // Remove particles that have reached their target
-          particles.splice(particles.indexOf(p), 1);
+          particles.splice(i, 1);
         }
       }
     };
@@ -266,9 +283,11 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
       particles.length = 0; 
     };
 
+    // Update particles on map events
     map.on("moveend", updateParticlesOnMapEvent);
     map.on("zoomend", updateParticlesOnMapEvent);
 
+    // Cleanup on component unmount
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);

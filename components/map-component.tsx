@@ -270,12 +270,11 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         zoomControl={false}
         attributionControl={false}
         worldCopyJump={true}
-        minZoom={isMobile ? 2 : 3}
+        minZoom={isMobile ? 2 : 3.4}
         maxZoom={isMobile ? 8 : 9}
         scrollWheelZoom={true}
         dragging={true}
         doubleClickZoom={true}
-        tap={true}
         placeholder={<div style={{width: "100%", height: "100%", backgroundColor: "#000000", display: "flex", alignItems: "center", justifyContent: "center"}}><div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse mr-2"></div>Initializing Map...</div>}
       >
         <TileLayer
