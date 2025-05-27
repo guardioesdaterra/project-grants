@@ -234,6 +234,20 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-cyan-900/20 pointer-events-none z-[399]"></div>
       {!isMobile && <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-purple-900/20 pointer-events-none z-[399]"></div>}
 
+      {/* Vignette Effect */}
+      <div className="absolute inset-0 pointer-events-none z-[400]" style={{ boxShadow: 'inset 0 0 150px 20px rgba(0,0,0,0.7)' }}></div>
+
+      {/* Noise Overlay - ensure noise.png is in public folder */}
+      {!isMobile && 
+        <div 
+          className="absolute inset-0 pointer-events-none z-[401] opacity-[0.07] animate-noise-bg"
+          style={{
+            backgroundImage: 'url(/noise.png)',
+            backgroundRepeat: 'repeat',
+          }}
+        ></div>
+      }
+
       {/* Scanline overlay - disabled on mobile */}
       {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-5 pointer-events-none z-[999999999]"></div>}
 

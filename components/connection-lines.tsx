@@ -20,7 +20,7 @@ interface ConnectionLinesProps {
   connections: Connection[];
   maxConnections?: number; // Optional limit override
   animationSpeed?: number; // Optional animation speed control
-  colorScheme?: 'cyberpunk' | 'monochrome' | 'warm' | 'cool'; // Visual theme option
+  colorScheme?: 'cyberpunk' | 'monochrome' | 'warm' | 'cool' | 'modern'; // Visual theme option
 }
 
 // Enhanced color palettes with different themes
@@ -31,6 +31,13 @@ const colorPalettes = {
     { start: '#39FF14', end: '#00FF88' }, // Neon green to teal
     { start: '#FF69B4', end: '#FF00AA' }, // Hot pink to purple
     { start: '#F0F', end: '#80F' },       // Bright purple to deep purple
+  ],
+  modern: [ // New modern palette
+    { start: '#4FD1C5', end: '#2D8A8A' }, // Teal
+    { start: '#6B46C1', end: '#4A2F8C' }, // Purple
+    { start: '#3182CE', end: '#2B6CB0' }, // Blue
+    { start: '#ECC94B', end: '#D69E2E' }, // Yellow (accent)
+    { start: '#76E4F7', end: '#0BC5EA' }, // Light Blue
   ],
   monochrome: [
     { start: '#FFFFFF', end: '#AAAAFF' }, // White to light blue
@@ -81,20 +88,20 @@ const ConnectionGroup = memo(({
   
   // Calculate intensity based on beneficiaries if available
   const beneficiaries = connection.from_project_indirect_beneficiaries || 0;
-  const intensity = beneficiaries > 1000 ? 1 : 
-                    beneficiaries > 500 ? 0.8 : 
-                    beneficiaries > 100 ? 0.6 : 0.4;
+  const intensity = beneficiaries > 1000 ? 0.9 : 
+                    beneficiaries > 500 ? 0.7 : 
+                    beneficiaries > 100 ? 0.5 : 0.3;
   
   // Select a color for the line based on its index
   const colorPair = colorPalette[index % colorPalette.length];
   
-  // Calculate base animation properties
-  const pulseEffect = Math.sin(pulsePhase / 16) * 0.2 + 0.8; // Varies from 0.6 to 1.0
-  const baseOpacity = 0.4 * pulseEffect * intensity;
+  // Calculate base animation properties with increased transparency
+  const pulseEffect = Math.sin(pulsePhase / 16) * 0.1 + 0.9; // Varies from 0.8 to 1.0 (more subtle)
+  const baseOpacity = 0.4 * pulseEffect * intensity; // Reduced baseOpacity for more transparency
   
   // Create segments with enhanced visual effects
   const segments = [];
-  const segmentCount = 4; // More segments for smoother gradient transition
+  const segmentCount = 4;
   
   for (let i = 0; i < segmentCount; i++) {
     const startIdx = Math.floor(i * (positions.length - 1) / segmentCount);
@@ -131,13 +138,10 @@ const ConnectionGroup = memo(({
           pathOptions={{
             color: segmentColor,
             opacity: segmentOpacity,
-            weight: 2.5 * intensity,
+            weight: 1.5 * intensity, // Reduced weight for thinner, more transparent lines
             lineJoin: 'round',
             lineCap: 'round',
             className: 'connection-line-glow',
-            // More sophisticated dash pattern based on both animation phases
-            dashArray: (i % 2 === 0) ? undefined : 
-                      `${4 + Math.sin(pulsePhase/15) * 2}, ${6 + Math.cos(animationPhase/20) * 2}`,
           }}
         />
       );
@@ -151,8 +155,8 @@ const ConnectionGroup = memo(({
       positions={positions}
       pathOptions={{
         color: colorPair.start,
-        opacity: baseOpacity * 0.4,
-        weight: 10 * intensity,
+        opacity: baseOpacity * 0.4, // Further reduced glow opacity for more transparency
+        weight: 10 * intensity, // Reduced glow weight for subtler effect
         lineJoin: 'round',
         lineCap: 'round',
         className: 'connection-line-base',
@@ -195,7 +199,7 @@ function generateCurvedPath(from: [number, number], to: [number, number], steps:
     // Randomize curve shape with enhanced algorithm
     // Use deterministic randomization based on coordinates to maintain consistency
     const seed = (from[0] * 1000 + from[1] + to[0] * 100 + to[1]) % 1000 / 1000;
-    const randomFactor = 0.15 + seed * 0.3; // Between 0.15 and 0.45
+    const randomFactor = 0.1 + seed * 0.1; // Between 0.1 and 0.2 (more uniform and flatter curves)
     
     // Add some variation to curve size based on distance
     const distanceFactor = Math.min(1, distance / 50);
@@ -242,7 +246,7 @@ export function ConnectionLines({
   connections, 
   maxConnections = DEFAULT_MAX_CONNECTIONS,
   animationSpeed = 1,
-  colorScheme = 'cyberpunk'
+  colorScheme = 'modern'
 }: ConnectionLinesProps) {
   // If there are no connections, render nothing.
   if (!connections || connections.length === 0) {
@@ -442,24 +446,24 @@ export function ConnectionLines({
       {/* Add CSS for glow effect */}
       <style jsx global>{`
         .leaflet-pane path.connection-line-glow {
-          filter: drop-shadow(0 0 3px rgba(0, 200, 255, 0.7));
-          transition: opacity 0.3s ease-in-out;
+          filter: drop-shadow(0 0 3px ${colorPalette[0].start}80) drop-shadow(0 0 7px ${colorPalette[1 % colorPalette.length].start}60) drop-shadow(0 0 10px ${colorPalette[2 % colorPalette.length].start}40);
+          transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
         }
         .leaflet-pane path.connection-line-base {
-          filter: blur(4px);
+          filter: blur(3px);
           transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
         }
         
         /* Create a subtle pulsing effect for the glow */
         @keyframes pulse-glow {
-          0% { filter: drop-shadow(0 0 2px rgba(0, 200, 255, 0.5)); }
-          50% { filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.8)); }
-          100% { filter: drop-shadow(0 0 2px rgba(0, 200, 255, 0.5)); }
+          0% { filter: drop-shadow(0 0 3px rgba(0, 220, 255, 0.4)) drop-shadow(0 0 6px rgba(0,220,255,0.2)); }
+          50% { filter: drop-shadow(0 0 6px rgba(0, 220, 255, 0.6)) drop-shadow(0 0 12px rgba(0,220,255,0.4)); }
+          100% { filter: drop-shadow(0 0 3px rgba(0, 220, 255, 0.4)) drop-shadow(0 0 6px rgba(0,220,255,0.2)); }
         }
         
         .leaflet-pane path.connection-line-glow:hover {
           animation: pulse-glow 1.5s infinite;
-          opacity: 0.9 !important;
+          opacity: 0.7 !important; /* Reduced from 0.9 to 0.7 for more transparency on hover */
         }
       `}</style>
     </>
