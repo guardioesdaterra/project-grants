@@ -1,9 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false)
+  // Initialize state with null to differentiate between server and client
+  const [matches, setMatches] = useState<boolean>(false)
+  
+  // Memoize the handler to avoid recreating it on every render
+  const updateMatches = useCallback((e?: MediaQueryListEvent | MediaQueryList) => {
+    const target = e || window.matchMedia(query);
+    const mediaMatches = target instanceof MediaQueryList 
+      ? target.matches 
+      : (target as MediaQueryListEvent).matches;
+    
+    setMatches(mediaMatches);
+  }, [query]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -14,18 +25,16 @@ export function useMediaQuery(query: string): boolean {
     }
 
     const media = window.matchMedia(query)
-
-    const updateMatches = () => setMatches(media.matches)
     
-    // Set the initial state correctly after mount
-    updateMatches()
+    // Set initial value
+    updateMatches(media)
 
-    // Listen for changes
+    // Add listener for subsequent changes
     media.addEventListener("change", updateMatches)
 
     // Cleanup listener on unmount or when query changes
     return () => media.removeEventListener("change", updateMatches)
-  }, [query]) // Effect now only depends on query
+  }, [query, updateMatches]) // Include updateMatches in dependencies
 
   return matches
 }

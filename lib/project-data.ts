@@ -300,8 +300,8 @@ export const allProjectsData: ProjectData[] = [
     {
       project_title: "Valorisation des déchets pour la production de Pastèque et atténuation au changement climatique en RD Congo",
       country_province: "IFA Yangambi (Institut Facultaire des Sciences Agronomiques de Yangambi)",
-      latitude: 0,
-      longitude: 0,
+      latitude: 0.5228644921734148,
+      longitude: 25.158771635951773,
       direct_beneficiaries: 0,
       indirect_beneficiaries: 0,
     },
@@ -460,8 +460,8 @@ export const allProjectsData: ProjectData[] = [
     {
       project_title: "Projet de gestion des déchets plastiques",
       country_province: "ONG Famille et Biodiversité pour l'Afrique ( ONG FABA)",
-      latitude: 0,
-      longitude: 0,
+      latitude: 7.9534123766214835,
+      longitude: 2.235870396706943,
       direct_beneficiaries: 0,
       indirect_beneficiaries: 0,
     },
@@ -548,8 +548,8 @@ export const allProjectsData: ProjectData[] = [
     {
       project_title: "Création de 24 espaces verts dans des écoles primaires publiques dans la commune de Saketé",
       country_province: "Coopérative des femmes transformatrices des produits agricoles",
-      latitude: 0,
-      longitude: 0,
+      latitude: 6.642857872751767,
+      longitude: 2.713760869720534,
       direct_beneficiaries: 0,
       indirect_beneficiaries: 0,
     },
@@ -572,8 +572,8 @@ export const allProjectsData: ProjectData[] = [
     {
       project_title: "Estrategias de Turismo Sostenible para Transformar Zonas Mineras en Jatunyaku",
       country_province: "Federación de las Organizaciones Indígenas de Napo (FOIN)",
-      latitude: 0,
-      longitude: 0,
+      latitude: -0.9945975631938563,
+      longitude: -77.81446504850011,
       direct_beneficiaries: 0,
       indirect_beneficiaries: 0,
     },

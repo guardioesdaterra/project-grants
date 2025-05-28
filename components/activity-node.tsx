@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MapPin, Users, Info, ArrowRight } from "lucide-react"
+import { MapPin, Users } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 // Updated color function based on INDIRECT beneficiaries and user's tiers

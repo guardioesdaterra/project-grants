@@ -9,14 +9,14 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
+      "src": "/icon-192x140.png",
+      "sizes": "192x140",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
+      "src": "/eg-logopng",
+      "sizes": "1104x1272",
       "type": "image/png"
     }
   ],
@@ -42,14 +42,14 @@
       "short_name": "Add",
       "description": "Add a new environmental activity",
       "url": "/submit",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192x140.png", "sizes": "192x140" }]
     },
     {
       "name": "Monitor Activities",
       "short_name": "Monitor",
       "description": "View and manage your activities",
       "url": "/monitor",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192x140.png", "sizes": "192x140" }]
     }
   ]
 }

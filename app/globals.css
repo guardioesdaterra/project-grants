@@ -35,6 +35,13 @@ body {
   .animate-noise-bg {
     animation: noise-bg-animation 0.2s steps(2) infinite;
   }
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    letter-spacing: 0.05em;
+    text-transform: lowercase;
+  }
 }
 
 @keyframes scanline {

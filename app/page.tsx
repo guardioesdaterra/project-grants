@@ -1,8 +1,5 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Plus, BarChart2 } from "lucide-react"
-import { allProjectsData } from "@/lib/project-data"
 import ClientMapWrapper from "@/components/client-map-wrapper"
+import { allProjectsData } from "@/lib/project-data"
 
 export default function Home() {
   return (

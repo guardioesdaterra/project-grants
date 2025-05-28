@@ -7,8 +7,8 @@ const PRECACHE_ASSETS = [
   "/",
   "/index.html",
   "/manifest.json",
-  "/icon-192x192.png",
-  "/icon-512x512.png",
+  "/icon-192x140.png",
+  "/eg-logo.png",
   "/grid-overlay.png",
   "/scanline.png",
   "/noise.png",
@@ -137,8 +137,3 @@ async function syncActivities() {
     }
   }
 }
-
-// Helper function to open IndexedDB
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request =\

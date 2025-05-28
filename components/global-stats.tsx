@@ -30,6 +30,11 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
     }
   }, [projects]);
 
+  // Calculate statistics
+  const totalProjects = projects.length;
+  const totalBeneficiaries = projects.reduce((sum, project) => sum + project.direct_beneficiaries, 0);
+  const avgBeneficiaries = Math.round(totalBeneficiaries / totalProjects);
+
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return (num / 1000000).toFixed(1).replace(".0", "") + "M"
     if (num >= 1000) return (num / 1000).toFixed(1).replace(".0", "") + "K"
@@ -42,13 +47,13 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
         isExpanded ? "p-3" : "p-2"
       }`}
     >
-      <div className="flex justify-between items-center">
+      <div className="flex justify-center items-center">
         <h2
           className={`font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600 ${
             isExpanded ? (isMobile ? "text-base" : "text-lg") : "text-sm"
           }`}
         >
-          Earth Guardians’ 2024 Project Grants Impact
+          --- 2024 Project Grants Impact ---
         </h2>
         <Button
           variant="ghost"

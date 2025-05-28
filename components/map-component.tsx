@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { MapContainer, TileLayer, useMap, ZoomControl } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
+import "@/styles/cyberpunk-fixes.css"
+import "@/styles/hexgrid.css"
 import L from "leaflet"
 import { ActivityNode } from "@/components/activity-node"
 import { ParticleEffect } from "@/components/particle-effect"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { HexGrid } from "@/components/hex-grid"
 import { MapControls } from "@/components/map-controls"
 import { GlobalStats } from "@/components/global-stats"
 import { ProjectData } from "@/lib/types"
@@ -94,6 +95,98 @@ interface Connection {
   from_project_indirect_beneficiaries: number;
 }
 
+// Fallback hexgrid effect in case the HexGrid component doesn't render
+function FallbackHexGrid() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isMobile = useMediaQuery("(max-width: 768px)")
+  
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    console.log("FallbackHexGrid: Setting up canvas");
+    
+    // Set canvas dimensions
+    const updateCanvasSize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    
+    updateCanvasSize()
+    window.addEventListener('resize', updateCanvasSize)
+    
+    // Draw the hexgrid
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // Add a test rectangle to show it's working
+    
+    // Hex grid settings
+    const hexSize = isMobile ? 35 : 50
+    const hexHeight = hexSize * Math.sqrt(3)
+    const hexWidth = hexSize * 2
+    const hexVerticalOffset = hexHeight * 0.75
+    const hexHorizontalOffset = hexWidth * 0.5
+    
+    // Calculate grid dimensions
+    const columns = Math.ceil(window.innerWidth / hexHorizontalOffset) + 1
+    const rows = Math.ceil(window.innerHeight / hexVerticalOffset) + 1
+    
+    // Draw the grid
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)'
+    ctx.lineWidth = 1.5
+    
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < columns; col++) {
+        const x = col * hexHorizontalOffset
+        const y = row * hexVerticalOffset + (col % 2 === 0 ? 0 : hexHeight / 2)
+        
+        // Skip if outside viewport
+        if (x < -hexWidth || x > canvas.width + hexWidth || 
+            y < -hexHeight || y > canvas.height + hexHeight) {
+          continue
+        }
+        
+        // Draw hexagon
+        ctx.beginPath()
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i
+          const hx = x + hexSize * Math.cos(angle)
+          const hy = y + hexSize * Math.sin(angle)
+          
+          if (i === 0) {
+            ctx.moveTo(hx, hy)
+          } else {
+            ctx.lineTo(hx, hy)
+          }
+        }
+        ctx.closePath()
+        ctx.stroke()
+      }
+    }
+    
+    return () => {
+      window.removeEventListener('resize', updateCanvasSize)
+    }
+  }, [isMobile])
+  
+  return (
+    <canvas 
+      ref={canvasRef}
+      className="fallback-hex-grid"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 450,
+      }}
+    />
+  )
+}
+
 export function MapComponent({ projects = allProjectsData }: MapComponentProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [showHexGrid, setShowHexGrid] = useState(true)
@@ -165,10 +258,13 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
 
   return (
     <div className="w-full h-screen relative overflow-hidden">
+      {/* Add debug overlay to help troubleshoot */}
+
       <style jsx global>{`
         .leaflet-container {
           background: #000;
           font-family: 'Inter', sans-serif;
+          position: relative; /* Ensure position context for absolute elements */
         }
         .leaflet-popup-content-wrapper {
           background: rgba(0, 0, 0, 0.9);
@@ -215,6 +311,33 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           z-index: 99999999;
         }
         
+        /* Fix for overlays */
+        .cyberpunk-bg-gradient {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 399;
+        }
+        
+        .cyberpunk-vignette {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 400;
+          box-shadow: inset 0 0 150px 20px rgba(0,0,0,0.7);
+        }
+        
+        .hex-grid-canvas {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        
         /* Mobile-specific improvements */
         @media (max-width: 768px) {
           .leaflet-control-zoom a {
@@ -230,17 +353,46 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         }
       `}</style>
 
-      {/* Background gradients - reduced complexity on mobile */}
-      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-cyan-900/20 pointer-events-none z-[399]"></div>
-      {!isMobile && <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-purple-900/20 pointer-events-none z-[399]"></div>}
+      {/* Background gradients with specific classes for debugging */}
+      <div className="cyberpunk-bg-gradient bg-gradient-to-b from-purple-900/20 to-green-900/20"></div>
+      {!isMobile && <div className="cyberpunk-bg-gradient bg-gradient-radial from-transparent via-transparent to-purple-900/20"></div>}
 
-      {/* Vignette Effect */}
-      <div className="absolute inset-0 pointer-events-none z-[400]" style={{ boxShadow: 'inset 0 0 150px 20px rgba(0,0,0,0.7)' }}></div>
+      {/* Vignette Effect with specific class */}
+      <div className="cyberpunk-vignette"></div>
+
+      {/* Fallback hex grid - will display even if the main one fails */}
+      {showHexGrid && <FallbackHexGrid />}
+      <div 
+          className="absolute inset-0 pointer-events-none opacity-5 z-[999999]"
+          style={{
+            backgroundImage: 'url(/grid-overlay.png)',
+          }}
+        ></div>
+
+
+      {/* White Banner - Position differently on mobile vs desktop */}
+      {isMobile ? (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999990] pointer-events-none">
+            <img 
+            src="/white-banner.png" 
+            alt="Earth Guardians" 
+            className="h-auto w-auto max-h-[12vh] object-contain"
+            />
+        </div>
+      ) : (
+        <div className="absolute left-[-20vh] top-1/2 -translate-y-1/2 z-[9999999900] pointer-events-none">
+          <img 
+            src="/white-banner.png" 
+            alt="Earth Guardians" 
+            className="h-auto w-auto max-h-[20vh] object-contain rotate-[-90deg]"
+          />
+        </div>
+      )}
 
       {/* Noise Overlay - ensure noise.png is in public folder */}
       {!isMobile && 
         <div 
-          className="absolute inset-0 pointer-events-none z-[401] opacity-[0.07] animate-noise-bg"
+          className="absolute inset-0 pointer-events-none z-[401] opacity-[0.010] animate-noise-bg"
           style={{
             backgroundImage: 'url(/noise.png)',
             backgroundRepeat: 'repeat',
@@ -248,8 +400,10 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         ></div>
       }
 
+
+
       {/* Scanline overlay - disabled on mobile */}
-      {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-5 pointer-events-none z-[999999999]"></div>}
+      {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-[0.015] pointer-events-none z-[402]"></div>}
 
       {/* Animated background elements - simplified on mobile */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[398]">
@@ -276,7 +430,9 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         dragging={true}
         doubleClickZoom={true}
         placeholder={<div style={{width: "100%", height: "100%", backgroundColor: "#000000", display: "flex", alignItems: "center", justifyContent: "center"}}><div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse mr-2"></div>Initializing Map...</div>}
+        className="relative" // Add relative positioning to ensure proper stacking context
       >
+
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -285,8 +441,6 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         <ZoomControl position="bottomleft" />
         <MapController />
 
-        {/* Only show HexGrid on desktop or if explicitly enabled */}
-        {(showHexGrid && (!isMobile || isClientMounted)) && <HexGrid />}
         <ConnectionLines connections={dynamicConnections} />
 
         {projects.map((project, index) => (
@@ -305,14 +459,15 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
         {(!isMobile || isClientMounted) && <ParticleEffect projects={projects} connections={dynamicConnections} />}
       </MapContainer>
 
+      {/* HexGrid placed outside of MapContainer for better DOM visibility */}
       {/* Map controls */}
       <MapControls onToggleHexGrid={() => setShowHexGrid(!showHexGrid)} showHexGrid={showHexGrid} />
 
       {/* Global stats panel - improved responsive positioning */}
       <div className={`absolute z-[500] transition-all duration-300 ${
         isClientMounted && isMobile 
-          ? "bottom-16 left-4 right-4 max-h-[40vh] overflow-auto rounded-lg" 
-          : "bottom-4 right-4 w-96"
+          ? "bottom-2 left-2 right-2 max-h-[40vh] overflow-auto rounded-lg" 
+          : "bottom-2 right-2 w-96"
       }`}>
         <GlobalStats projects={projects} />
       </div>

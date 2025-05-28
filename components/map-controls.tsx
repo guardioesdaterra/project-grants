@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Layers, Grid, Info, X, Maximize, Minimize, Compass, Search, ArrowRight, MapPin, List } from "lucide-react"
+import { Layers, Grid, X, Maximize, Minimize, Search, ArrowRight, MapPin, List } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import L from "leaflet"
@@ -28,16 +28,25 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [lastUpdatedDate, setLastUpdatedDate] = useState("");
 
+  // Use ref to prevent unnecessary re-renders in strict mode
+  const dateInitializedRef = useRef(false);
+  useEffect(() => {
+    // Skip in development's first render of strict mode
+    if (process.env.NODE_ENV === 'development' && dateInitializedRef.current) {
+      return;
+    }
+    dateInitializedRef.current = true;
+    
+    // Set this only once
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []);
+
   // Focus search input when search panel opens
   useEffect(() => {
     if (showSearch && searchInputRef.current) {
       searchInputRef.current.focus()
     }
   }, [showSearch])
-
-  useEffect(() => {
-    setLastUpdatedDate(new Date().toLocaleDateString());
-  }, []);
 
   // Search logic
   useEffect(() => {
@@ -83,23 +92,32 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
     }
   }
 
-  const resetMapView = () => {
-    // Type assertion to handle __leaflet_instance_
-    const map = (document.querySelector(".leaflet-container") as any)?.__leaflet_instance_ as L.Map;
-    if (map) {
-      map.setView([20, 0], isMobile ? 1.5 : 2.5, { animate: true })
-    }
-  }
-
   // Navigate to a specific location on the map
   const navigateToLocation = (lat: number, lng: number) => {
-    const map = (document.querySelector(".leaflet-container") as any)?.__leaflet_instance_ as L.Map;
-    if (map) {
-      map.setView([lat, lng], 6, { animate: true });
-      // Close the search panel after navigation
-      setShowSearch(false);
-      setSearchQuery("");
-      setShowAllProjects(false);
+    try {
+      // Find the first Leaflet map instance
+      const mapContainer = document.querySelector(".leaflet-container");
+      if (!mapContainer) return;
+      
+      // Try accessing the map through the Leaflet internal structure
+      // @ts-ignore - Leaflet typings are complex, we know this works
+      const map = L.DomUtil.getLeafletElement?.(mapContainer) || 
+                  // @ts-ignore - Fallback method to find map instance
+                  mapContainer._leaflet_map ||
+                  // @ts-ignore - Another fallback
+                  window.leafletMap;
+      
+      if (map && typeof map.setView === 'function') {
+        map.setView([lat, lng], 6, { animate: true });
+        // Close the search panel after navigation
+        setShowSearch(false);
+        setSearchQuery("");
+        setShowAllProjects(false);
+      } else {
+        console.warn("Could not find Leaflet map instance");
+      }
+    } catch (error) {
+      console.error("Error navigating to location:", error);
     }
   }
   
@@ -167,8 +185,6 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-
-
       </div>
 
       {/* Search Panel */}
@@ -243,7 +259,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
             ) : !showAllProjects ? (
               <div className="flex flex-col space-y-2 items-center justify-center py-4">
                 <Search className="h-8 w-8 text-cyan-900/50" />
-                <p className="text-xs text-gray-400 text-center">Enter search term or click "List" to view all projects</p>
+                <p className="text-xs text-gray-400 text-center">Enter search term or click &quot;List&quot; to view all projects</p>
                 <Button
                   variant="outline"
                   size="sm"

@@ -102,7 +102,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
       if (isZooming || isPanning) return;
       
       // Adaptive particle limits
-      const maxParticles = isMobile ? 50 : 100;
+      const maxParticles = isMobile ? 30 : 40;
       if (particles.length > maxParticles) return;
       
       // Get all project origins by creating a map of from coordinates to connection arrays
