@@ -63,7 +63,7 @@ const colorPalettes = {
 };
 
 // Default performance configuration
-const DEFAULT_MAX_CONNECTIONS = 44;
+const DEFAULT_MAX_CONNECTIONS = 60;
 const DEFAULT_CURVE_STEPS = 21;
 const DEFAULT_ANIMATION_INTERVAL = 80;
 
@@ -97,11 +97,15 @@ const ConnectionGroup = memo(({
   
   // Calculate base animation properties with increased transparency
   const pulseEffect = Math.sin(pulsePhase / 16) * 0.1 + 0.9; // Varies from 0.8 to 1.0 (more subtle)
-  const baseOpacity = 0.16 * pulseEffect * intensity; // Reduced baseOpacity for more transparency
+  const baseOpacity = 0.6 * pulseEffect * intensity; // Reduced baseOpacity for more transparency
   
   // Create segments with enhanced visual effects
   const segments = [];
   const segmentCount = 4;
+  
+  // Define the dash pattern for dotted lines with high spacing
+  // Format: [dot_size, space_size]
+  const dashPattern = '8, 35'; // 8px dot, 35px space
   
   for (let i = 0; i < segmentCount; i++) {
     const startIdx = Math.floor(i * (positions.length - 1) / segmentCount);
@@ -138,9 +142,10 @@ const ConnectionGroup = memo(({
           pathOptions={{
             color: segmentColor,
             opacity: segmentOpacity,
-            weight: 1 * intensity, // Reduced weight for thinner, more transparent lines
+            weight: 2.5 * intensity, // Increased weight for better visibility of dots
             lineJoin: 'round',
             lineCap: 'round',
+            dashArray: dashPattern, // Add dash pattern for dotted line
             className: 'connection-line-glow',
           }}
         />
@@ -159,6 +164,7 @@ const ConnectionGroup = memo(({
         weight: 10 * intensity, // Reduced glow weight for subtler effect
         lineJoin: 'round',
         lineCap: 'round',
+        dashArray: dashPattern, // Add dash pattern for dotted glow
         className: 'connection-line-base',
       }}
     />

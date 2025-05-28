@@ -439,7 +439,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
 
       <MapContainer
         ref={mapRef}
-        style={{ height: "100%", width: "100%" }}
+        style={{ height: "100%", width: "100%", filter: "invert(1)" }}
         zoomControl={false}
         attributionControl={false}
         worldCopyJump={true}
@@ -453,7 +453,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       >
 
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
 
