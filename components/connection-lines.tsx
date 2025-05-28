@@ -63,9 +63,9 @@ const colorPalettes = {
 };
 
 // Default performance configuration
-const DEFAULT_MAX_CONNECTIONS = 33;
+const DEFAULT_MAX_CONNECTIONS = 44;
 const DEFAULT_CURVE_STEPS = 21;
-const DEFAULT_ANIMATION_INTERVAL = 60;
+const DEFAULT_ANIMATION_INTERVAL = 80;
 
 // Memoized helper component for individual connection group
 const ConnectionGroup = memo(({ 
@@ -97,7 +97,7 @@ const ConnectionGroup = memo(({
   
   // Calculate base animation properties with increased transparency
   const pulseEffect = Math.sin(pulsePhase / 16) * 0.1 + 0.9; // Varies from 0.8 to 1.0 (more subtle)
-  const baseOpacity = 0.4 * pulseEffect * intensity; // Reduced baseOpacity for more transparency
+  const baseOpacity = 0.16 * pulseEffect * intensity; // Reduced baseOpacity for more transparency
   
   // Create segments with enhanced visual effects
   const segments = [];
@@ -138,7 +138,7 @@ const ConnectionGroup = memo(({
           pathOptions={{
             color: segmentColor,
             opacity: segmentOpacity,
-            weight: 1.5 * intensity, // Reduced weight for thinner, more transparent lines
+            weight: 1 * intensity, // Reduced weight for thinner, more transparent lines
             lineJoin: 'round',
             lineCap: 'round',
             className: 'connection-line-glow',

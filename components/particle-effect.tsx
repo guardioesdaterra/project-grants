@@ -45,8 +45,12 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [isZooming, setIsZooming] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
+  const isUnmountingRef = useRef(false)
 
   useEffect(() => {
+    // Set unmounting flag to false on mount
+    isUnmountingRef.current = false;
+
     // Clear particles if no connections
     if (!connections || connections.length === 0) {
       const canvas = canvasRef.current;
@@ -81,25 +85,48 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
     const particles = particlesRef.current;
     
     // Map event listeners for pause/resume animations
-    const handleZoomStart = () => setIsZooming(true);
+    const handleZoomStart = () => {
+      if (isUnmountingRef.current) return;
+      setIsZooming(true);
+    }
+    
     const handleZoomEnd = () => {
-      setTimeout(() => setIsZooming(false), 300);
-    };
+      if (isUnmountingRef.current) return;
+      setTimeout(() => {
+        if (!isUnmountingRef.current) {
+          setIsZooming(false);
+        }
+      }, 300);
+    }
     
-    const handleMoveStart = () => setIsPanning(true);
+    const handleMoveStart = () => {
+      if (isUnmountingRef.current) return;
+      setIsPanning(true);
+    }
+    
     const handleMoveEnd = () => {
-      setTimeout(() => setIsPanning(false), 300);
-    };
+      if (isUnmountingRef.current) return;
+      setTimeout(() => {
+        if (!isUnmountingRef.current) {
+          setIsPanning(false);
+        }
+      }, 300);
+    }
     
-    map.on('zoomstart', handleZoomStart);
-    map.on('zoomend', handleZoomEnd);
-    map.on('movestart', handleMoveStart);
-    map.on('moveend', handleMoveEnd);
+    // Use safer event binding with try-catch
+    try {
+      map.on('zoomstart', handleZoomStart);
+      map.on('zoomend', handleZoomEnd);
+      map.on('movestart', handleMoveStart);
+      map.on('moveend', handleMoveEnd);
+    } catch (error) {
+      console.error("Error binding map events:", error);
+    }
 
     // Function to create new particles
     const createParticles = () => {
-      // Skip creating particles during zooming/panning
-      if (isZooming || isPanning) return;
+      // Skip creating particles during zooming/panning or unmounting
+      if (isZooming || isPanning || isUnmountingRef.current) return;
       
       // Adaptive particle limits
       const maxParticles = isMobile ? 30 : 40;
@@ -173,8 +200,16 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
     const frameInterval = 1000 / targetFPS;
 
     const animate = (timestamp: number) => {
+      // Skip if unmounting
+      if (isUnmountingRef.current) return;
+      
       // Request next animation frame first
-      animationRef.current = requestAnimationFrame(animate);
+      try {
+        animationRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error("Error requesting animation frame:", error);
+        return;
+      }
 
       // Limit FPS
       if (timestamp - lastFrameTime < frameInterval) {
@@ -194,83 +229,94 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
       }
 
       if (!canvasRef.current) return;
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      
+      try {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-      // Resize canvas if needed
-      if (canvasRef.current.width !== mapContainer.clientWidth || canvasRef.current.height !== mapContainer.clientHeight) {
-        canvasRef.current.width = mapContainer.clientWidth;
-        canvasRef.current.height = mapContainer.clientHeight;
-      }
-
-      // Always try to create particles if below max count
-      if (particles.length < (isMobile ? 50 : 100)) {
-        createParticles();
-      }
-
-      // Process all particles for immediate visibility
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        const dx = p.targetX - p.x;
-        const dy = p.targetY - p.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > p.speed) {
-          p.x += (dx / distance) * p.speed;
-          p.y += (dy / distance) * p.speed;
-          p.trail.push({ x: p.x, y: p.y });
-          if (p.trail.length > p.trailLength) {
-            p.trail.shift();
-          }
-
-          // Draw trail
-          if (p.trail.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(p.trail[0].x, p.trail[0].y);
-            for (let j = 1; j < p.trail.length; j++) {
-              ctx.lineTo(p.trail[j].x, p.trail[j].y);
-            }
-            ctx.strokeStyle = p.color.startsWith("#") 
-              ? `${p.color}${Math.round(p.alpha * 0.6 * 255).toString(16).padStart(2, '0')}` // More visible trails
-              : p.color.replace(")", `, ${p.alpha * 0.6})`);
-            ctx.lineWidth = p.size * 0.6;
-            ctx.stroke();
-          }
-
-          // Draw particle - Make the main particle more visible
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color.startsWith("#") 
-            ? `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}`
-            : p.color.replace(")", `, ${p.alpha})`);
-          ctx.fill();
-
-          // Only draw glow effect on desktop
-          if (!isMobile) {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
-            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 1.5);
-            const baseColorForGradient = p.color.startsWith("#") 
-              ? p.color 
-              : p.color.substring(0, p.color.lastIndexOf(","));
-            gradient.addColorStop(0, p.color.startsWith("#") 
-              ? `${baseColorForGradient}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}`
-              : `${baseColorForGradient}, ${p.alpha * 0.5})`);
-            gradient.addColorStop(1, p.color.startsWith("#") 
-              ? `${baseColorForGradient}00` 
-              : `${baseColorForGradient}, 0)`);
-            ctx.fillStyle = gradient;
-            ctx.fill();
-          }
-        } else {
-          // Remove particles that have reached their target
-          particles.splice(i, 1);
+        // Resize canvas if needed
+        if (canvasRef.current.width !== mapContainer.clientWidth || canvasRef.current.height !== mapContainer.clientHeight) {
+          canvasRef.current.width = mapContainer.clientWidth;
+          canvasRef.current.height = mapContainer.clientHeight;
         }
+
+        // Always try to create particles if below max count
+        if (particles.length < (isMobile ? 50 : 100)) {
+          createParticles();
+        }
+
+        // Process all particles for immediate visibility
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          const dx = p.targetX - p.x;
+          const dy = p.targetY - p.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance > p.speed) {
+            p.x += (dx / distance) * p.speed;
+            p.y += (dy / distance) * p.speed;
+            p.trail.push({ x: p.x, y: p.y });
+            if (p.trail.length > p.trailLength) {
+              p.trail.shift();
+            }
+
+            // Draw trail
+            if (p.trail.length > 1) {
+              ctx.beginPath();
+              ctx.moveTo(p.trail[0].x, p.trail[0].y);
+              for (let j = 1; j < p.trail.length; j++) {
+                ctx.lineTo(p.trail[j].x, p.trail[j].y);
+              }
+              ctx.strokeStyle = p.color.startsWith("#") 
+                ? `${p.color}${Math.round(p.alpha * 0.6 * 255).toString(16).padStart(2, '0')}` // More visible trails
+                : p.color.replace(")", `, ${p.alpha * 0.6})`);
+              ctx.lineWidth = p.size * 0.6;
+              ctx.stroke();
+            }
+
+            // Draw particle - Make the main particle more visible
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color.startsWith("#") 
+              ? `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}`
+              : p.color.replace(")", `, ${p.alpha})`);
+            ctx.fill();
+
+            // Only draw glow effect on desktop
+            if (!isMobile) {
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
+              const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 1.5);
+              const baseColorForGradient = p.color.startsWith("#") 
+                ? p.color 
+                : p.color.substring(0, p.color.lastIndexOf(","));
+              gradient.addColorStop(0, p.color.startsWith("#") 
+                ? `${baseColorForGradient}${Math.round(p.alpha * 0.5 * 255).toString(16).padStart(2, '0')}`
+                : `${baseColorForGradient}, ${p.alpha * 0.5})`);
+              gradient.addColorStop(1, p.color.startsWith("#") 
+                ? `${baseColorForGradient}00` 
+                : `${baseColorForGradient}, 0)`);
+              ctx.fillStyle = gradient;
+              ctx.fill();
+            }
+          } else {
+            // Remove particles that have reached their target
+            particles.splice(i, 1);
+          }
+        }
+      } catch (error) {
+        console.error("Error in animation frame:", error);
       }
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    try {
+      animationRef.current = requestAnimationFrame(animate);
+    } catch (error) {
+      console.error("Error starting animation:", error);
+    }
 
     const updateParticlesOnMapEvent = () => {
+      if (isUnmountingRef.current) return;
+      
       if (canvasRef.current && mapContainer) { 
         canvasRef.current.width = mapContainer.clientWidth;
         canvasRef.current.height = mapContainer.clientHeight;
@@ -284,24 +330,56 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
     };
 
     // Update particles on map events
-    map.on("moveend", updateParticlesOnMapEvent);
-    map.on("zoomend", updateParticlesOnMapEvent);
+    try {
+      map.on("moveend", updateParticlesOnMapEvent);
+      map.on("zoomend", updateParticlesOnMapEvent);
+    } catch (error) {
+      console.error("Error binding map events for particles:", error);
+    }
 
     // Cleanup on component unmount
     return () => {
+      // Set unmounting flag to true before cleanup
+      isUnmountingRef.current = true;
+      
+      // Cancel animation frame with try-catch
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        try {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
+        } catch (error) {
+          console.error("Error canceling animation frame:", error);
+        }
       }
-      if (canvasRef.current && mapContainer && canvasRef.current.parentNode === mapContainer) {
-         mapContainer.removeChild(canvasRef.current);
+
+      // Clear particles array
+      if (particlesRef.current) {
+        particlesRef.current.length = 0;
       }
-      canvasRef.current = null; 
-      map.off("moveend", updateParticlesOnMapEvent);
-      map.off("zoomend", updateParticlesOnMapEvent);
-      map.off('zoomstart', handleZoomStart);
-      map.off('zoomend', handleZoomEnd);
-      map.off('movestart', handleMoveStart);
-      map.off('moveend', handleMoveEnd);
+      
+      // Clean up canvas
+      if (canvasRef.current) {
+        try {
+          if (mapContainer && canvasRef.current.parentNode === mapContainer) {
+            mapContainer.removeChild(canvasRef.current);
+          }
+          canvasRef.current = null;
+        } catch (error) {
+          console.error("Error removing canvas element:", error);
+        }
+      }
+      
+      // Remove event listeners with try-catch
+      try {
+        map.off("moveend", updateParticlesOnMapEvent);
+        map.off("zoomend", updateParticlesOnMapEvent);
+        map.off('zoomstart', handleZoomStart);
+        map.off('zoomend', handleZoomEnd);
+        map.off('movestart', handleMoveStart);
+        map.off('moveend', handleMoveEnd);
+      } catch (error) {
+        console.error("Error removing map event listeners:", error);
+      }
     };
   }, [map, connections, projects, isMobile, isZooming, isPanning]);
 

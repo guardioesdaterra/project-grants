@@ -103,9 +103,7 @@ function FallbackHexGrid() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    
-    console.log("FallbackHexGrid: Setting up canvas");
-    
+        
     // Set canvas dimensions
     const updateCanvasSize = () => {
       canvas.width = window.innerWidth
@@ -249,9 +247,30 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
   // Clean up map on unmount
   useEffect(() => {
     const map = mapRef.current;
+    
     return () => {
+      // Use a small delay before cleanup to allow any pending operations to complete
       if (map) {
-        map.remove();
+        try {
+          // Set a flag to prevent new operations during cleanup
+          const isUnmounting = true;
+          
+          // Clean up event listeners first
+          map.off();
+          
+          // Remove the map with a slight delay to prevent message port issues
+          setTimeout(() => {
+            try {
+              if (map) {
+                map.remove();
+              }
+            } catch (error) {
+              console.error("Error removing map during cleanup:", error);
+            }
+          }, 100);
+        } catch (error) {
+          console.error("Error during map cleanup:", error);
+        }
       }
     };
   }, []);
@@ -372,7 +391,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
 
       {/* White Banner - Position differently on mobile vs desktop */}
       {isMobile ? (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999990] pointer-events-none">
+        <div className="opacity-50 absolute top-3 left-1/2 -translate-x-1/2 z-[999990] pointer-events-none">
             <img 
             src="/white-banner.png" 
             alt="Earth Guardians" 
@@ -380,11 +399,11 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
             />
         </div>
       ) : (
-        <div className="absolute left-[-20vh] top-1/2 -translate-y-1/2 z-[9999999900] pointer-events-none">
+        <div className="opacity-50 absolute left-[-15vh] top-1/2 -translate-y-1/2 z-[9999999900] pointer-events-none">
           <img 
             src="/white-banner.png" 
             alt="Earth Guardians" 
-            className="h-auto w-auto max-h-[20vh] object-contain rotate-[-90deg]"
+            className="h-auto w-auto max-h-[15vh] object-contain rotate-[-90deg]"
           />
         </div>
       )}
