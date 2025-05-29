@@ -15,6 +15,8 @@ import { ProjectData } from "@/lib/types"
 import { ConnectionLines } from "@/components/connection-lines"
 import { allProjectsData } from "@/lib/project-data"
 
+const MAPTILER_API_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+
 // Fix Leaflet icon issues in Next.js
 const markerIcon = L.icon({
   iconUrl: "/marker-icon.png",
@@ -439,7 +441,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
 
       <MapContainer
         ref={mapRef}
-        style={{ height: "100%", width: "100%", filter: "invert(1)" }}
+        style={{ height: "100%", width: "100%" }}
         zoomControl={false}
         attributionControl={false}
         worldCopyJump={true}
@@ -453,8 +455,12 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       >
 
         <TileLayer
-          url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url={`https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_API_KEY}`}
+          eventHandlers={{
+            load: () => console.log('Map tile layer loaded successfully'),
+            error: (e) => console.error('Error loading map tiles:', e)
+          }}
+          attribution='EARTH GUARDIANS @ 2025'
         />
 
         <ZoomControl position="bottomleft" />
