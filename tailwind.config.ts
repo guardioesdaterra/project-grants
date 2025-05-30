@@ -121,6 +121,10 @@ const config: Config = {
         "pulse-slow-delay-2": {
           "0%, 100%": { opacity: "0.3" },
           "50%": { opacity: "0.05" }
+        },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.85" }
         }
       },
       animation: {
@@ -133,6 +137,7 @@ const config: Config = {
         "pulse-slow": "pulse-slow 4s ease-in-out infinite",
         "pulse-slow-delay": "pulse-slow-delay 5s ease-in-out infinite",
         "pulse-slow-delay-2": "pulse-slow-delay-2 6s ease-in-out infinite",
+        "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
       },
       transitionProperty: {
         'height': 'height',

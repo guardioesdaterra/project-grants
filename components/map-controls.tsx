@@ -199,7 +199,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
           </Tooltip>
         </TooltipProvider>
 
-        {!isGlobeView && (
+        {(
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -218,37 +218,6 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
             </Tooltip>
           </TooltipProvider>
         )}
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {isGlobeView ? (
-                <Link href="/">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="w-10 h-10 rounded-md bg-black/70 border border-cyan-900/50 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
-                  >
-                    <MapPin className="h-5 w-5" />
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/globe">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="w-10 h-10 rounded-md bg-black/70 border border-cyan-900/50 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
-                  >
-                    <Globe className="h-5 w-5" />
-                  </Button>
-                </Link>
-              )}
-            </TooltipTrigger>
-            <TooltipContent side={isMobile ? "right" : "left"}>
-              <p>{isGlobeView ? "Switch to 2D Map View" : "Switch to 3D Globe View"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
@@ -282,6 +251,45 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
             </TooltipTrigger>
             <TooltipContent side={isMobile ? "right" : "left"}>
               <p>{fullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {isGlobeView ? (
+                <Link href="/">
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="relative flex items-center gap-2 h-10 px-3 rounded-lg bg-gradient-to-r from-indigo-900/90 to-purple-900/90 border-2 border-cyan-400 text-white hover:from-indigo-800 hover:to-purple-800 hover:border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)] transform transition-all duration-300 hover:scale-105 w-auto scale-110 animate-pulse-subtle"
+                  >
+                    <MapPin className="h-5 w-5 text-cyan-300" />
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>
+                    </span>
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/globe">
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="relative flex items-center gap-2 h-10 px-3 rounded-lg bg-gradient-to-r from-indigo-900/90 to-purple-900/90 border-2 border-cyan-400 text-white hover:from-indigo-800 hover:to-purple-800 hover:border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)] transform transition-all duration-300 hover:scale-105 w-auto scale-110 animate-pulse-subtle"
+                  >
+                    <Globe className="h-5 w-5 text-cyan-300" />
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>
+                    </span>
+                  </Button>
+                </Link>
+              )}
+            </TooltipTrigger>
+            <TooltipContent side={isMobile ? "right" : "left"} className="bg-purple-900/90 border-cyan-400 text-cyan-100">
+              <p className="font-medium">{isGlobeView ? "Switch to Interactive 2D Map" : "Experience 3D Globe View"}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -383,7 +391,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
                         {result.country_province}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {result.direct_beneficiaries.toLocaleString()} beneficiaries
+                        {result.indirect_beneficiaries.toLocaleString()} indirect benef.
                       </p>
                     </div>
                   </div>
@@ -441,14 +449,14 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
             <p>• Click on markers to view activity details</p>
             <p>• Glowing lines represent connections between initiatives</p>
             <p>• Use zoom controls to navigate the map</p>
-            {!isGlobeView && <p>• Toggle the hex grid for different visualization</p>}
+            <p>• Toggle the hex grid for different visualization</p>
             <p>• {isGlobeView ? "Switch to 2D Map" : "Switch to 3D Globe"} view using the icon</p>
             <p>• Search for projects by name or location</p>
             <p>• View all projects using the list button in search</p>
             <p>• View the color legend to understand beneficiary markers</p>
           </div>
           <div className="mt-3 pt-3 border-t border-cyan-900/30 text-xs text-gray-400">
-            <p>EcoTrack Global v1.0</p>
+            <p>Project Grants v1.0</p>
             <p>Last updated: {lastUpdatedDate}</p>
           </div>
         </div>

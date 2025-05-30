@@ -501,10 +501,10 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       <MapControls onToggleHexGrid={() => setShowHexGrid(!showHexGrid)} showHexGrid={showHexGrid} />
 
       {/* Global stats panel - improved responsive positioning */}
-      <div className={`absolute z-[1000] w-full max-w-xl px-4 sm:px-0 ${
+      <div className={`bottom-4 absolute z-[1000] w-full max-w-xl px-4 sm:px-0 ${
         isClientMounted && isMobile 
-          ? "bottom-3 max-h-[40vh] overflow-auto rounded-lg" 
-          : "right-2 bottom-3 w-96"
+          ? "max-h-[40vh] overflow-auto" 
+          : "right-2 w-96 rounded-lg"
       }`}>
         <GlobalStats projects={projects} />
       </div>

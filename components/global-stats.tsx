@@ -42,7 +42,7 @@ export function GlobalStats({ projects }: GlobalStatsProps) {
     >
       <div className="flex justify-center items-center mb-1">
         <h2
-          className={`font-semibold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-300 uppercase tracking-wider [text-shadow:_0_0_8px_theme(colors.purple.500),_0_0_12px_theme(colors.pink.500)] ${ 
+          className={`whitespace-nowrap font-semibold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-300 uppercase tracking-wider [text-shadow:_0_0_8px_theme(colors.purple.500),_0_0_12px_theme(colors.pink.500)] ${
             isExpanded ? (isMobile ? "text-base" : "text-lg") : "text-sm"
           }`}
         >
