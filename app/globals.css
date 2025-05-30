@@ -6,12 +6,39 @@
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 0, 0, 0;
   --background-end-rgb: 0, 0, 0;
+  --app-height: 100%;
+}
+
+/* Prevent default browser behaviors */
+html, body {
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  height: var(--app-height);
+  touch-action: pan-x pan-y;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
-  overscroll-behavior: none;
+}
+
+/* Fix content sizes to prevent overflow */
+#__next, main {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Ensure all elements use border-box for consistent sizing */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 @layer utilities {
@@ -41,6 +68,11 @@ body {
     transform: rotate(180deg);
     letter-spacing: 0.05em;
     text-transform: lowercase;
+  }
+  .mobile-fill-screen {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
   }
 }
 
@@ -100,6 +132,27 @@ body {
   a,
   [role="button"] {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px; /* Minimum touch target size */
+    min-width: 44px;  /* Minimum touch target size */
+  }
+  
+  /* Fix 100vh issue on mobile browsers */
+  .min-h-screen,
+  .h-screen {
+    height: var(--app-height);
+  }
+  
+  /* Prevent rubber-banding/overscroll effect */
+  html {
+    position: fixed;
+  }
+  
+  /* Optimize for fixed position elements */
+  .fixed {
+    position: fixed !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 }
 
@@ -118,5 +171,14 @@ body {
 @supports (-webkit-touch-callout: none) {
   .min-h-screen {
     min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
+  }
+  
+  /* Support for iPhone X+ safe areas */
+  .has-safe-area {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

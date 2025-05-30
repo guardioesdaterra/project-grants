@@ -31,13 +31,15 @@ export const metadata = {
   generator: 'Tupã Levi | 2025'
 }
 
-// Viewports settings - moved from metadata following Next.js recommendations
+// Viewports settings - updated for optimal mobile experience
 export const viewport = {
   themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -49,29 +51,67 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         
         {/* Preconnect to external resources */}
         <link rel="preconnect" href="https://api.maptiler.com" crossOrigin="anonymous" />
         
-        {/* Disable iOS touch callout */}
+        {/* Mobile optimizations */}
         <style>{`
           * {
             -webkit-overflow-scrolling: touch;
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
+            touch-action: manipulation;
           }
           
           /* Fix 100vh issue on mobile */
-          html, body, .min-h-screen {
+          html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+          }
+          
+          .min-h-screen {
             height: 100%;
           }
           
           @supports (-webkit-touch-callout: none) {
             .min-h-screen {
               min-height: -webkit-fill-available;
+              height: -webkit-fill-available;
+            }
+          }
+          
+          /* Prevent content from being hidden under notches/cut-outs */
+          @supports (padding: max(0px)) {
+            body {
+              padding-left: env(safe-area-inset-left);
+              padding-right: env(safe-area-inset-right);
+              padding-top: env(safe-area-inset-top);
+              padding-bottom: env(safe-area-inset-bottom);
             }
           }
         `}</style>
+        
+        {/* Fix mobile viewport height */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            // Mobile viewport height fix
+            function setAppHeight() {
+              document.documentElement.style.setProperty('--app-height', \`\${window.innerHeight}px\`);
+            }
+            
+            // Set initial height
+            setAppHeight();
+            
+            // Update on resize and orientation change
+            window.addEventListener('resize', setAppHeight);
+            window.addEventListener('orientationchange', setAppHeight);
+          `
+        }} />
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
