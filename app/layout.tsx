@@ -11,12 +11,11 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
+// Metadata for SEO and PWA capabilities
 export const metadata = {
   title: "Earth Guardians | Project Grants",
-  description: "Track granteds socioenvironmental initiatives by Earth Guardians, worldwide",
+  description: "Track granted socioenvironmental initiatives by Earth Guardians, worldwide",
   manifest: "/manifest.json",
-  themeColor: "#000000",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -32,6 +31,15 @@ export const metadata = {
   generator: 'Tupã Levi | 2025'
 }
 
+// Viewports settings - moved from metadata following Next.js recommendations
+export const viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
@@ -39,7 +47,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192x140.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#000000" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         

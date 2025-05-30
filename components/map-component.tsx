@@ -219,7 +219,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       
       projectsToProcess.forEach(project => {
         // Filter out the current project
-        let availableTargets = projectsToProcess.filter(p => p.project_title !== project.project_title);
+        const availableTargets = projectsToProcess.filter(p => p.project_title !== project.project_title);
         
         // Limit connections per project
         const connectionsToMake = Math.min(maxConnectionsPerProject, availableTargets.length);
@@ -254,9 +254,6 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       // Use a small delay before cleanup to allow any pending operations to complete
       if (map) {
         try {
-          // Set a flag to prevent new operations during cleanup
-          const isUnmounting = true;
-          
           // Clean up event listeners first
           map.off();
           
@@ -501,11 +498,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       <MapControls onToggleHexGrid={() => setShowHexGrid(!showHexGrid)} showHexGrid={showHexGrid} />
 
       {/* Global stats panel - improved responsive positioning */}
-      <div className={`bottom-4 absolute z-[1000] w-full max-w-xl px-4 sm:px-0 ${
-        isClientMounted && isMobile 
-          ? "max-h-[40vh] overflow-auto" 
-          : "right-2 w-96 rounded-lg"
-      }`}>
+      <div className="absolute right-0 bottom-0 z-[1000] w-full max-w-xl px-4 sm:px-0">
         <GlobalStats projects={projects} />
       </div>
     </div>

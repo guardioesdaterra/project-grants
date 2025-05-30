@@ -68,9 +68,9 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
-  )
+  const colorConfig = Object.values(config)
+    .map((item, index) => [Object.keys(config)[index], item] as const)
+    .filter(([, configItem]) => configItem.theme || configItem.color)
 
   if (!colorConfig.length) {
     return null
@@ -322,8 +322,9 @@ function getPayloadConfigFromPayload(
   payload: unknown,
   key: string
 ) {
-  // Use a placeholder variable that's not unused
-  return config[key]
+  const { dataKey } = payload as { dataKey?: string };
+  const configKey = dataKey || key;
+  return config[configKey];
 }
 
 export {

@@ -48,7 +48,6 @@ export function OptimizedTileLayer({
       if (!tileLayer || !map) return
       
       const bounds = map.getBounds()
-      const center = map.getCenter()
       
       // Slightly expand bounds to prefetch adjacent tiles
       const expandedBounds = bounds.pad(0.2)

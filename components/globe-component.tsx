@@ -7,6 +7,7 @@ import { getProjectColor, getProjectColorByBeneficiaries } from "@/lib/colors"
 import { GlobalStats } from '@/components/global-stats'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type maplibregl from 'maplibre-gl'
+import Link from "next/link"
 
 const MAPTILER_API_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
 
@@ -49,6 +50,7 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
   const [isMapLoaded, setIsMapLoaded] = useState(false)
   const [dynamicConnections, setDynamicConnections] = useState<Connection[]>([])
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const [hasError, setHasError] = useState(false)
 
   // Clean up function to prevent memory leaks
   const cleanupResources = useCallback(() => {
@@ -90,46 +92,79 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
     let isMounted = true
     
     const initializeMap = async () => {
+      // Early return if running on server side
       if (typeof window === 'undefined') return
       
       try {
-        // Import maplibre only on client side
-        const maplibreglPackage = (await import('maplibre-gl')).default
+        // Import maplibre only on client side - with better error handling
+        let maplibreglPackage;
+        try {
+          maplibreglPackage = (await import('maplibre-gl')).default
+        } catch (err) {
+          console.error("Failed to load maplibre-gl:", err)
+          if (isMounted) setHasError(true)
+          return
+        }
+        
+        // Safety check before continuing
+        if (!isMounted || !containerRef.current) return
         
         // Add CSS
-        const maplibreStyles = document.createElement('link')
-        maplibreStyles.rel = 'stylesheet'
-        maplibreStyles.href = 'https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.css'
-        document.head.appendChild(maplibreStyles)
+        const existingLink = document.querySelector('link[href*="maplibre-gl"]')
+        if (!existingLink) {
+          const maplibreStyles = document.createElement('link')
+          maplibreStyles.rel = 'stylesheet'
+          maplibreStyles.href = 'https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.css'
+          document.head.appendChild(maplibreStyles)
+        }
         
-        if (!containerRef.current || !isMounted) return
-        
-        // Create the map
-        const map = new maplibreglPackage.Map({
-          container: containerRef.current,
-          style: `https://api.maptiler.com/maps/satellite/style.json?key=${MAPTILER_API_KEY}`,
-          zoom: isMobile ? 1.8 : 3,
-          center: [0, 0],
-          attributionControl: false,
-          renderWorldCopies: false,
-        })
+        // Create the map with error handling
+        let map;
+        try {
+          map = new maplibreglPackage.Map({
+            container: containerRef.current,
+            style: `https://api.maptiler.com/maps/satellite/style.json?key=${MAPTILER_API_KEY}`,
+            zoom: isMobile ? 1.8 : 3,
+            center: [0, 0],
+            attributionControl: false,
+            renderWorldCopies: false,
+          })
+        } catch (err) {
+          console.error("Error creating MapLibre map:", err)
+          if (isMounted) setHasError(true)
+          return
+        }
         
         // Store the map reference
-        mapRef.current = map
+        if (isMounted) {
+          mapRef.current = map
+        } else {
+          // Immediately clean up if component unmounted during async operations
+          map.remove()
+          return
+        }
         
         // Add attribution control in a better position
-        map.addControl(
-          new maplibreglPackage.AttributionControl({
-            customAttribution: 'EARTH GUARDIANS @ 2025'
-          }),
-        )
+        try {
+          map.addControl(
+            new maplibreglPackage.AttributionControl({
+              customAttribution: 'EARTH GUARDIANS @ 2025'
+            }),
+          )
+        } catch (err) {
+          console.error("Error adding attribution control:", err)
+        }
         
         // Set projection to globe AFTER style loads
         map.on('style.load', () => {
-          if (isMounted && mapRef.current) {
+          if (!isMounted || !mapRef.current) return
+          
+          try {
             mapRef.current.setProjection({
               type: 'globe'
             })
+          } catch (err) {
+            console.error("Error setting globe projection:", err)
           }
         })
         
@@ -139,21 +174,35 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
             setIsMapLoaded(true)
           }
         })
+        
+        // Error handler
+        map.on('error', (err) => {
+          console.error("MapLibre map error:", err)
+        })
       } catch (err) {
         console.error("Error initializing MapLibre GL JS map:", err)
+        if (isMounted) setHasError(true)
       }
     }
     
-    initializeMap()
+    // Small delay before map initialization to ensure DOM is fully ready
+    const timer = setTimeout(() => {
+      initializeMap()
+    }, 100)
     
     // Clean up on unmount
     return () => {
+      clearTimeout(timer)
       isMounted = false
       cleanupResources()
       
       // Dispose map
       if (mapRef.current) {
-        mapRef.current.remove()
+        try {
+          mapRef.current.remove()
+        } catch (err) {
+          console.error("Error removing map:", err)
+        }
         mapRef.current = null
       }
     }
@@ -194,9 +243,9 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
       // Filter out current project and already used targets
       const availableTargets = projectsToProcess.filter(
         p => p.project_title !== project.project_title && 
-             p.latitude && 
-             p.longitude &&
-             !usedAsTarget.has(p.project_title)
+            p.latitude && 
+            p.longitude &&
+            !usedAsTarget.has(p.project_title)
       )
       
       if (availableTargets.length === 0) return
@@ -651,6 +700,33 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
     }
   }, [isMapLoaded, dynamicConnections, isMobile, generateCurvedPath])
   
+  // Check for errors first
+  if (hasError) {
+    return (
+      <div className="w-full h-screen bg-black flex flex-col items-center justify-center text-white">
+        <div className="h-16 w-16 rounded-full bg-gradient-to-r from-red-500 to-orange-600 animate-pulse mb-6"></div>
+        <h2 className="text-xl font-bold mb-2">Unable to Load Globe Visualization</h2>
+        <p className="text-gray-300 mb-4">The globe component could not be loaded.</p>
+        <div className="flex space-x-4">
+          <Link 
+            href="/"
+            className="px-4 py-2 bg-black bg-opacity-70 rounded border border-cyan-500/50 text-cyan-400 hover:bg-cyan-900/30 transition-colors"
+            aria-label="Return to 2D Map"
+          >
+            Return to 2D Map
+          </Link>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-black bg-opacity-70 rounded border border-purple-500/50 text-purple-400 hover:bg-purple-900/30 transition-colors"
+            aria-label="Try Again"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-screen relative overflow-hidden">
       {/* GlobalStats Component */}

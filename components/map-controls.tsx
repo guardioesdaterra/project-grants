@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Layers, Grid, X, Maximize, Minimize, Search, ArrowRight, MapPin, List, Globe, Palette } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import L from "leaflet"
 import { ProjectData } from "@/lib/types"
 import { allProjectsData } from "@/lib/project-data"
 import Link from "next/link"
@@ -71,10 +70,29 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [lastUpdatedDate, setLastUpdatedDate] = useState("");
   const [showLegend, setShowLegend] = useState(false);
+  const leafletRef = useRef<any>(null);
+
+  // Carregar Leaflet dinamicamente apenas no cliente
+  useEffect(() => {
+    const loadLeaflet = async () => {
+      try {
+        const L = (await import('leaflet')).default;
+        leafletRef.current = L;
+      } catch (err) {
+        console.error("Error loading Leaflet:", err);
+      }
+    };
+    
+    if (typeof window !== 'undefined' && !isGlobeView) {
+      loadLeaflet();
+    }
+  }, [isGlobeView]);
 
   // Use ref to prevent unnecessary re-renders in strict mode
   const dateInitializedRef = useRef(false);
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     // Skip in development's first render of strict mode
     if (process.env.NODE_ENV === 'development' && dateInitializedRef.current) {
       return;
@@ -113,6 +131,8 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
   }, [searchQuery, showAllProjects])
 
   const toggleFullscreen = () => {
+    if (typeof document === 'undefined') return;
+    
     if (!document.fullscreenElement) {
       document.documentElement
         .requestFullscreen()
@@ -138,13 +158,21 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
 
   // Navigate to a specific location on the map
   const navigateToLocation = (lat: number, lng: number) => {
+    if (isGlobeView || typeof window === 'undefined') {
+      console.info("Navigation not available in globe view");
+      return;
+    }
+    
     try {
       // Find the first Leaflet map instance
       const mapContainer = document.querySelector(".leaflet-container");
       if (!mapContainer) return;
       
+      const L = leafletRef.current;
+      if (!L) return;
+      
       // Try accessing the map through the Leaflet internal structure
-      // @ts-expect-error - Leaflet typings are complex, we know this works
+      // @ts-expect - Leaflet typings are complex, we know this works
       const map = L.DomUtil.getLeafletElement?.(mapContainer) || 
                   // @ts-expect-error - Fallback method to find map instance
                   mapContainer._leaflet_map ||
@@ -398,7 +426,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
                   <ArrowRight className="h-4 w-4 text-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0 mt-1" />
                 </div>
               ))
-            ) : searchQuery.length > 1 ? (
+            ) : searchQuery.length > 0 ? (
               <div className="text-xs text-gray-400 text-center py-2">No results found</div>
             ) : !showAllProjects ? (
               <div className="flex flex-col space-y-2 items-center justify-center py-4">

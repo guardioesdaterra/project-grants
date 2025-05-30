@@ -68,7 +68,7 @@ export function MapController() {
           } else {
             map.setView(currentCenter, currentZoom)
           }
-        } catch (error) {
+        } catch {
           // If the map isn't ready yet, set default view
           console.warn("Map not ready, setting default view")
           map.setView([0, 0], 2)

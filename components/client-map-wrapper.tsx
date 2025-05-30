@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { ProjectData } from '@/lib/types'; // Assuming ProjectData is in lib/types.ts
+import { ProjectData } from '@/lib/types';
+import { allProjectsData } from '@/lib/project-data';
 
 // Dynamically import MapComponent with error handling
 const MapComponentWithNoSSR = dynamic(
@@ -11,12 +12,14 @@ const MapComponentWithNoSSR = dynamic(
     .catch(err => {
       console.error("Error loading MapComponent:", err);
       // Return a simple fallback component in case of error
-      return () => (
+      const ErrorComponent = () => (
         <div className="w-full h-screen bg-black flex items-center justify-center text-white text-xl flex-col">
           <div className="h-16 w-16 rounded-full bg-gradient-to-r from-red-500 to-orange-600 animate-pulse mb-4"></div>
           <p>Error loading map. Please refresh the page.</p>
         </div>
       );
+      ErrorComponent.displayName = "MapErrorFallback";
+      return ErrorComponent;
     }),
   {
     ssr: false,
@@ -30,11 +33,13 @@ const MapComponentWithNoSSR = dynamic(
 );
 
 interface ClientMapWrapperProps {
-  projects: ProjectData[];
+  projects?: ProjectData[];
 }
 
-export default function ClientMapWrapper({ projects }: ClientMapWrapperProps) {
+function ClientMapWrapper({ projects }: ClientMapWrapperProps) {
   const [isClientReady, setIsClientReady] = useState(false);
+  const [leafletReady, setLeafletReady] = useState(false);
+  const projectsData = projects || allProjectsData;
 
   // Only render map when client is fully ready
   useEffect(() => {
@@ -48,20 +53,30 @@ export default function ClientMapWrapper({ projects }: ClientMapWrapperProps) {
 
   // Fix Leaflet default icon missing in production build
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const L = require('leaflet');
-      
-      delete L.Icon.Default.prototype._getIconUrl;
-      
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: '/marker-icon-2x.png',
-        iconUrl: '/marker-icon.png',
-        shadowUrl: '/marker-shadow.png',
-      });
-    }
+    const setupLeaflet = async () => {
+      try {
+        // Importar Leaflet dinamicamente apenas no cliente
+        const L = (await import('leaflet')).default;
+        
+        // @ts-expect-error - Known issue with Leaflet typings
+        delete L.Icon.Default.prototype._getIconUrl;
+        
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: '/marker-icon-2x.png',
+          iconUrl: '/marker-icon.png',
+          shadowUrl: '/marker-shadow.png',
+        });
+        
+        setLeafletReady(true);
+      } catch (error) {
+        console.error("Error setting up Leaflet icons:", error);
+      }
+    };
+    
+    setupLeaflet();
   }, []);
 
-  if (!isClientReady) {
+  if (!isClientReady || !leafletReady) {
     return (
       <div className="w-full h-screen bg-black flex items-center justify-center text-white text-xl">
         <div className="h-16 w-16 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse mr-4"></div>
@@ -70,5 +85,8 @@ export default function ClientMapWrapper({ projects }: ClientMapWrapperProps) {
     );
   }
 
-  return <MapComponentWithNoSSR projects={projects} />;
-} 
+  return <MapComponentWithNoSSR projects={projectsData} />;
+}
+
+ClientMapWrapper.displayName = "ClientMapWrapper";
+export default ClientMapWrapper; 

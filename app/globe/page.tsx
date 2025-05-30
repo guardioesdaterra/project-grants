@@ -1,31 +1,21 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import ClientGlobeWrapper from "@/components/client-globe-wrapper"
-import { allProjectsData } from "@/lib/project-data"
-import { MapControls } from "@/components/map-controls"
+import { ClientGlobeLoader } from "@/components/client-globe-loader"
+import { Suspense } from "react"
 
 export default function GlobePage() {
-  // State for hex grid toggle
-  const [showHexGrid, setShowHexGrid] = useState(true)
-  
-  // Toggle function for hex grid
-  const toggleHexGrid = () => setShowHexGrid(!showHexGrid)
-  
   return (
     <main className="flex min-h-screen flex-col bg-black text-white">
       <div className="flex-1 relative">
-        <ClientGlobeWrapper 
-          projects={allProjectsData} 
-          showHexGrid={showHexGrid}
-          onToggleHexGrid={toggleHexGrid}
-        />
-        <MapControls 
-          isGlobeView={true}
-          showHexGrid={showHexGrid}
-          onToggleHexGrid={toggleHexGrid}
-        />
+        <Suspense fallback={
+          <div className="flex h-screen w-full items-center justify-center bg-black text-white">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse mr-4"></div>
+            Loading Globe...
+          </div>
+        }>
+          <ClientGlobeLoader />
+        </Suspense>
       </div>
     </main>
   )
-} 
+}

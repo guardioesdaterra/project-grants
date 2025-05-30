@@ -1,13 +1,13 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
-  "private": true,
+  
+  "name": "EG Project Grants",
+  "version": "0.1.9",
+  "private": false,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/download-leaflet-assets.js && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "download-assets": "node scripts/download-leaflet-assets.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

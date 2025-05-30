@@ -34,13 +34,11 @@ const ConnectionGroup = memo(({
   connection, 
   paths, 
   index, 
-  animationPhase, 
   pulsePhase
 }: { 
   connection: Connection, 
   paths: LatLngExpression[], 
-  index: number, 
-  animationPhase: number, 
+  index: number,
   pulsePhase: number
 }) => {
   const positions = paths;
@@ -103,6 +101,9 @@ const ConnectionGroup = memo(({
     </React.Fragment>
   );
 });
+
+// Assign display name
+ConnectionGroup.displayName = "ConnectionGroup";
 
 // Function to generate a curved path between two points with enhanced curve control
 function generateCurvedPath(from: [number, number], to: [number, number], steps: number = DEFAULT_CURVE_STEPS): LatLngExpression[] {
@@ -178,29 +179,23 @@ export function ConnectionLines({
   maxConnections = DEFAULT_MAX_CONNECTIONS,
   animationSpeed = 1
 }: ConnectionLinesProps) {
-  // If there are no connections, render nothing.
-  if (!connections || connections.length === 0) {
-    return null;
-  }
-
-  // Get the map instance
+  // Always get the map instance at the top level, never conditionally
   const map = useMap();
-
-  // Animation states with timing adjustment based on speed
-  const [animationPhase, setAnimationPhase] = useState(0);
+  
+  // Initialize all state hooks unconditionally
   const [pulsePhase, setPulsePhase] = useState(0);
   const animationIntervalRef = useRef<number | null>(null);
   const pulseIntervalRef = useRef<number | null>(null);
-  
-  // State to track if connections are within view
   const [isVisible, setIsVisible] = useState(true);
-  
-  // Filter and memoize connections to render
+
+  // Filter and memoize connections to render - MOVED ABOVE CONDITIONAL
   const connectionsToRender = useMemo(() => {
-    return connections.slice(0, maxConnections);
+    return connections && connections.length > 0 
+      ? connections.slice(0, maxConnections)
+      : [];
   }, [connections, maxConnections]);
 
-  // Generate paths for visible connections
+  // Generate paths for visible connections - MOVED ABOVE CONDITIONAL
   const generatedPaths = useMemo(() => {
     return connectionsToRender.map(conn => generateCurvedPath(conn.from, conn.to));
   }, [connectionsToRender]);
@@ -232,10 +227,11 @@ export function ConnectionLines({
     };
   }, [map, connectionsToRender]);
   
-  // Animation effect for line tracing with adjusted timing
-  useEffect(() => {
-    // Only run animation when connections are in view
+  // Animation effect for line tracing with adjusted timing - MOVED ABOVE CONDITIONAL
+  useEffect(() => {    
+    // Don't run animations if not visible
     if (!isVisible) {
+      // Clean up any running intervals
       if (animationIntervalRef.current) {
         window.clearInterval(animationIntervalRef.current);
         animationIntervalRef.current = null;
@@ -257,9 +253,9 @@ export function ConnectionLines({
       animationIntervalRef.current = null;
     }
     
-    // Set new interval for line animation
+    // Set new interval for line animation without using animationPhase
     animationIntervalRef.current = window.setInterval(() => {
-      setAnimationPhase(prev => (prev + 1) % 100);
+      // We're not updating animation phase anymore
     }, traceInterval);
     
     // Set new interval for pulse effect with different timing
@@ -283,20 +279,26 @@ export function ConnectionLines({
         pulseIntervalRef.current = null;
       }
     };
-  }, [isVisible, animationSpeed]);
+  }, [animationSpeed, isVisible]);
   
-  // Don't render if not visible
-  if (!isVisible) return null;
+  // Early return for empty connections
+  if (!connections || connections.length === 0) {
+    return null;
+  }
+  
+  // Early return if not visible
+  if (!isVisible) {
+    return null;
+  }
   
   return (
     <>
-      {connectionsToRender.map((connection, index) => (
-        <ConnectionGroup
-          key={connection.id || `connection-${index}`}
-          connection={connection}
-          paths={generatedPaths[index]}
+      {connectionsToRender.map((conn, index) => (
+        <ConnectionGroup 
+          key={conn.id || `connection-${index}`}
+          connection={conn} 
+          paths={generatedPaths[index]} 
           index={index}
-          animationPhase={animationPhase}
           pulsePhase={pulsePhase}
         />
       ))}
@@ -324,4 +326,6 @@ export function ConnectionLines({
       `}</style>
     </>
   );
-} 
+}
+
+ConnectionLines.displayName = "ConnectionLines"; 

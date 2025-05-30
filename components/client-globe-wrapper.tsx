@@ -61,34 +61,39 @@ const GlobeComponentWithNoSSR = dynamic(
 interface ClientGlobeWrapperProps {
   projects: ProjectData[];
   showHexGrid?: boolean;
-  onToggleHexGrid?: () => void;
 }
 
 export default function ClientGlobeWrapper({ 
   projects, 
-  showHexGrid = true,
-  onToggleHexGrid 
+  showHexGrid = true
 }: ClientGlobeWrapperProps) {
   const [isClientReady, setIsClientReady] = useState(false);
   const [hasError, setHasError] = useState(false);
-  // Internal state for hex grid if no external control is provided
-  const [internalShowHexGrid, setInternalShowHexGrid] = useState(true);
   
-  // Use external control if provided, otherwise use internal state
-  const hexGridVisible = showHexGrid !== undefined ? showHexGrid : internalShowHexGrid;
-  const toggleHexGrid = onToggleHexGrid || (() => setInternalShowHexGrid(!internalShowHexGrid));
-
+  // Use the provided showHexGrid prop directly
+  const hexGridVisible = showHexGrid;
+  
   // Only render globe when client is fully ready
   useEffect(() => {
+    // Safety check for server-side rendering
+    if (typeof window === 'undefined') return;
+    
     try {
       // Small delay to ensure browser is ready for 3D rendering
       const timer = setTimeout(() => {
         setIsClientReady(true);
-      }, 200);
+      }, 300);
       
       // Check for WebGL support
       const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      let gl = null;
+      
+      try {
+        gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      } catch (e) {
+        console.error("Error getting WebGL context:", e);
+      }
+      
       if (!gl) {
         console.error("WebGL not supported");
         setHasError(true);

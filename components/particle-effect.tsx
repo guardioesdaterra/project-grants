@@ -185,7 +185,7 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
                 trailLength: Math.floor(isMobile ? 2 + Math.random() * 1 : 3 + Math.random() * 2)
               });
             }
-          } catch (error) {
+          } catch {
             // Fail silently if points cannot be calculated
           }
         }
