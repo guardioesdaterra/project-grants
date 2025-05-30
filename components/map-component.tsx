@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { MapContainer, TileLayer, useMap, ZoomControl } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
-import "@/styles/cyberpunk-fixes.css"
-import "@/styles/hexgrid.css"
 import L from "leaflet"
 import { ActivityNode } from "@/components/activity-node"
 import { ParticleEffect } from "@/components/particle-effect"
@@ -94,6 +92,7 @@ interface MapComponentProps {
 interface Connection {
   from: [number, number];
   to: [number, number];
+  from_project_direct_beneficiaries: number;
   from_project_indirect_beneficiaries: number;
 }
 
@@ -235,6 +234,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
             newConnections.push({
               from: [project.latitude, project.longitude],
               to: [targetProject.latitude, targetProject.longitude],
+              from_project_direct_beneficiaries: project.direct_beneficiaries,
               from_project_indirect_beneficiaries: project.indirect_beneficiaries,
             });
           }
@@ -286,6 +286,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           background: #000;
           font-family: 'Inter', sans-serif;
           position: relative; /* Ensure position context for absolute elements */
+          z-index: 1; /* Ensure Leaflet container establishes a stacking context */
         }
         .leaflet-popup-content-wrapper {
           background: rgba(0, 0, 0, 0.9);
@@ -293,46 +294,46 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           border-radius: 0;
           border: 1px solid rgba(6, 182, 212, 0.5);
           box-shadow: 0 0 20px rgba(6, 182, 212, 0.3), inset 0 0 10px rgba(6, 182, 212, 0.1);
-          overflow: visible !important;
+          overflow: visible;
         }
         .leaflet-popup-tip {
           background: rgba(0, 0, 0, 0.9);
           border: 1px solid rgba(6, 182, 212, 0.5);
         }
         .leaflet-popup-close-button {
-          color: rgba(6, 182, 212, 0.8) !important;
+          color: rgba(6, 182, 212, 0.8);
         }
         .leaflet-control-zoom {
-          border: none !important;
-          margin-right: 15px !important;
-          margin-bottom: 15px !important;
+          border: none;
+          margin-right: 15px;
+          margin-bottom: 15px;
         }
         .leaflet-control-zoom a {
-          background-color: rgba(0, 0, 0, 0.7) !important;
-          color: rgba(6, 182, 212, 0.8) !important;
-          border: 1px solid rgba(6, 182, 212, 0.5) !important;
-          width: 36px !important;
-          height: 36px !important;
-          line-height: 36px !important;
-          font-size: 18px !important;
-          font-weight: bold !important;
+          background-color: rgba(0, 0, 0, 0.7);
+          color: rgba(6, 182, 212, 0.8);
+          border: 1px solid rgba(6, 182, 212, 0.5);
+          width: 36px;
+          height: 36px;
+          line-height: 36px;
+          font-size: 18px;
+          font-weight: bold;
         }
         .leaflet-control-zoom a:hover {
-          background-color: rgba(6, 182, 212, 0.2) !important;
-          color: rgba(6, 182, 212, 1) !important;
+          background-color: rgba(6, 182, 212, 0.2);
+          color: rgba(6, 182, 212, 1);
         }
         .cyberpunk-popup .leaflet-popup-content {
           margin: 0;
-          overflow: visible !important;
+          overflow: visible;
           position: relative;
           z-index: 99999999;
         }
         .cyberpunk-popup {
-          overflow: visible !important;
+          overflow: visible;
           z-index: 99999999;
         }
         
-        /* Fix for overlays */
+        /* Styles from cyberpunk-fixes.css */
         .cyberpunk-bg-gradient {
           position: absolute;
           top: 0;
@@ -354,18 +355,29 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           box-shadow: inset 0 0 150px 20px rgba(0,0,0,0.7);
         }
         
-        .hex-grid-canvas {
-          opacity: 1 !important;
-          visibility: visible !important;
+        /* Styles from hexgrid.css and for FallbackHexGrid */
+        .hex-grid-canvas,
+        .fallback-hex-grid {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 450; /* Ensure it's above background, below map controls */
+          pointer-events: none;
+          opacity: 0.2; /* Default opacity */
+          visibility: visible;
+          display: block;
         }
         
-        /* Mobile-specific improvements */
         @media (max-width: 768px) {
           .leaflet-control-zoom a {
-            width: 40px !important;
-            height: 40px !important;
-            line-height: 40px !important;
-            font-size: 20px !important;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            font-size: 20px;
           }
           .leaflet-popup-content-wrapper {
             max-width: 90vw;
@@ -384,7 +396,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       {/* Fallback hex grid - will display even if the main one fails */}
       {showHexGrid && <FallbackHexGrid />}
       <div 
-          className="absolute inset-0 pointer-events-none opacity-5 z-[999999]"
+          className="absolute inset-0 pointer-events-none opacity-5 z-[451]"
           style={{
             backgroundImage: 'url(/grid-overlay.png)',
           }}
@@ -393,7 +405,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
 
       {/* White Banner - Position differently on mobile vs desktop */}
       {isMobile ? (
-        <div className="opacity-50 absolute top-3 left-1/2 -translate-x-1/2 z-[999990] pointer-events-none">
+        <div className="opacity-50 absolute top-3 left-1/2 -translate-x-1/2 z-[990] pointer-events-none">
             <img 
             src="/white-banner.png" 
             alt="Earth Guardians" 
@@ -401,7 +413,7 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
             />
         </div>
       ) : (
-        <div className="opacity-50 absolute left-[-15vh] top-1/2 -translate-y-1/2 z-[9999999900] pointer-events-none">
+        <div className="opacity-50 absolute left-[-15vh] top-1/2 -translate-y-1/2 z-[990] pointer-events-none">
           <img 
             src="/white-banner.png" 
             alt="Earth Guardians" 
@@ -489,10 +501,10 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
       <MapControls onToggleHexGrid={() => setShowHexGrid(!showHexGrid)} showHexGrid={showHexGrid} />
 
       {/* Global stats panel - improved responsive positioning */}
-      <div className={`absolute z-[500] transition-all duration-300 ${
+      <div className={`absolute z-[1000] w-full max-w-xl px-4 sm:px-0 ${
         isClientMounted && isMobile 
-          ? "bottom-2 left-2 right-2 max-h-[40vh] overflow-auto rounded-lg" 
-          : "bottom-2 right-2 w-96"
+          ? "bottom-3 max-h-[40vh] overflow-auto rounded-lg" 
+          : "right-2 bottom-3 w-96"
       }`}>
         <GlobalStats projects={projects} />
       </div>

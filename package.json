@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/download-leaflet-assets.js && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "download-assets": "node scripts/download-leaflet-assets.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -47,6 +48,7 @@
     "input-otp": "1.4.1",
     "leaflet": "latest",
     "lucide-react": "^0.454.0",
+    "maplibre-gl": "^5.5.0",
     "next": "15.2.4",
     "next-themes": "^0.4.4",
     "react": "^18.2.0",
@@ -64,6 +66,7 @@
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.17",
+    "@types/maplibre-gl": "^1.14.0",
     "@types/node": "^22",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

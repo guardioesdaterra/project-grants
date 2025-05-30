@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo, memo } from 'react';
 import { Polyline, useMap } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import React from 'react';
+import { getProjectColorByBeneficiaries } from "@/lib/colors"; // Import the centralized color function
 
 // This defines the structure of a single connection,
 // which consists of 'from' and 'to' coordinates.
@@ -11,6 +12,7 @@ interface Connection {
   from: [number, number];
   to: [number, number];
   from_project_indirect_beneficiaries?: number;
+  from_project_direct_beneficiaries?: number;
   id?: string; // Optional unique identifier
 }
 
@@ -20,47 +22,7 @@ interface ConnectionLinesProps {
   connections: Connection[];
   maxConnections?: number; // Optional limit override
   animationSpeed?: number; // Optional animation speed control
-  colorScheme?: 'cyberpunk' | 'monochrome' | 'warm' | 'cool' | 'modern'; // Visual theme option
 }
-
-// Enhanced color palettes with different themes
-const colorPalettes = {
-  cyberpunk: [
-    { start: '#00FFFF', end: '#0088FF' }, // Cyan to blue
-    { start: '#FF00FF', end: '#FF0088' }, // Magenta to pink
-    { start: '#39FF14', end: '#00FF88' }, // Neon green to teal
-    { start: '#FF69B4', end: '#FF00AA' }, // Hot pink to purple
-    { start: '#F0F', end: '#80F' },       // Bright purple to deep purple
-  ],
-  modern: [ // New modern palette
-    { start: '#4FD1C5', end: '#2D8A8A' }, // Teal
-    { start: '#6B46C1', end: '#4A2F8C' }, // Purple
-    { start: '#3182CE', end: '#2B6CB0' }, // Blue
-    { start: '#ECC94B', end: '#D69E2E' }, // Yellow (accent)
-    { start: '#76E4F7', end: '#0BC5EA' }, // Light Blue
-  ],
-  monochrome: [
-    { start: '#FFFFFF', end: '#AAAAFF' }, // White to light blue
-    { start: '#EEEEFF', end: '#8888FF' }, // Light blue to medium blue
-    { start: '#CCCCFF', end: '#6666FF' }, // Light blue to blue
-    { start: '#AAAAFF', end: '#4444FF' }, // Light blue to deeper blue
-    { start: '#8888FF', end: '#2222FF' }, // Medium blue to deep blue
-  ],
-  warm: [
-    { start: '#FFFF00', end: '#FF8800' }, // Yellow to orange
-    { start: '#FFAA00', end: '#FF5500' }, // Orange to red-orange
-    { start: '#FF7700', end: '#FF2200' }, // Orange to red
-    { start: '#FF5500', end: '#FF0066' }, // Red-orange to pink
-    { start: '#FF2200', end: '#FF00AA' }, // Red to magenta
-  ],
-  cool: [
-    { start: '#00FFFF', end: '#0088FF' }, // Cyan to blue
-    { start: '#00CCFF', end: '#0044FF' }, // Light blue to deep blue
-    { start: '#0088FF', end: '#0000FF' }, // Blue to deeper blue
-    { start: '#0044FF', end: '#4400FF' }, // Deep blue to violet
-    { start: '#0000FF', end: '#8800FF' }, // Deep blue to purple
-  ]
-};
 
 // Default performance configuration
 const DEFAULT_MAX_CONNECTIONS = 60;
@@ -73,104 +35,67 @@ const ConnectionGroup = memo(({
   paths, 
   index, 
   animationPhase, 
-  pulsePhase,
-  colorPalette
+  pulsePhase
 }: { 
   connection: Connection, 
   paths: LatLngExpression[], 
   index: number, 
   animationPhase: number, 
-  pulsePhase: number,
-  colorPalette: { start: string, end: string }[]
+  pulsePhase: number
 }) => {
   const positions = paths;
   if (!positions || positions.length < 2) return null;
   
-  // Calculate intensity based on beneficiaries if available
-  const beneficiaries = connection.from_project_indirect_beneficiaries || 0;
-  const intensity = beneficiaries > 1000 ? 0.9 : 
-                    beneficiaries > 500 ? 0.7 : 
-                    beneficiaries > 100 ? 0.5 : 0.3;
+  const directBeneficiaries = connection.from_project_direct_beneficiaries || 0;
+  const indirectBeneficiaries = connection.from_project_indirect_beneficiaries || 0;
+  const totalBeneficiaries = directBeneficiaries + indirectBeneficiaries;
   
-  // Select a color for the line based on its index
-  const colorPair = colorPalette[index % colorPalette.length];
+  const intensity = totalBeneficiaries > 1000 ? 0.9 : 
+                    totalBeneficiaries > 500 ? 0.7 : 
+                    totalBeneficiaries > 100 ? 0.5 : 0.3;
   
-  // Calculate base animation properties with increased transparency
-  const pulseEffect = Math.sin(pulsePhase / 16) * 0.1 + 0.9; // Varies from 0.8 to 1.0 (more subtle)
-  const baseOpacity = 0.6 * pulseEffect * intensity; // Reduced baseOpacity for more transparency
+  // Select a color for the line based on project beneficiaries
+  const lineColor = getProjectColorByBeneficiaries(directBeneficiaries, indirectBeneficiaries);
   
-  // Create segments with enhanced visual effects
+  const pulseEffect = Math.sin(pulsePhase / 16) * 0.1 + 0.9;
+  const baseOpacity = 0.6 * pulseEffect * intensity;
+  
   const segments = [];
-  const segmentCount = 4;
+  // Simplified to one segment as the color is uniform now
+  const dashPattern = '8, 35'; 
   
-  // Define the dash pattern for dotted lines with high spacing
-  // Format: [dot_size, space_size]
-  const dashPattern = '8, 35'; // 8px dot, 35px space
+  segments.push(
+    <Polyline
+      key={`connection-${index}-segment-main`}
+      positions={positions}
+      pathOptions={{
+        color: lineColor, // Use derived lineColor
+        opacity: baseOpacity,
+        weight: 2.5 * intensity,
+        lineJoin: 'round',
+        lineCap: 'round',
+        dashArray: dashPattern,
+        className: 'connection-line-glow',
+      }}
+    />
+  );
   
-  for (let i = 0; i < segmentCount; i++) {
-    const startIdx = Math.floor(i * (positions.length - 1) / segmentCount);
-    const endIdx = Math.floor((i + 1) * (positions.length - 1) / segmentCount);
-    
-    if (endIdx > startIdx) {
-      // Calculate this segment's animation phase with offset
-      const segmentPhase = (animationPhase + i * 25) % 100;
-      
-      // Flowing animation effect with improved wave pattern
-      const flowPosition = segmentPhase / 100;
-      const flowEffect = Math.sin(Math.PI * (flowPosition + i/segmentCount));
-      const segmentOpacity = baseOpacity * (0.7 + flowEffect * 0.3);
-      
-      // Create color gradient based on segment position
-      const segmentPosition = i / (segmentCount - 1);
-      const r1 = parseInt(colorPair.start.slice(1, 3), 16);
-      const g1 = parseInt(colorPair.start.slice(3, 5), 16);
-      const b1 = parseInt(colorPair.start.slice(5, 7), 16);
-      const r2 = parseInt(colorPair.end.slice(1, 3), 16);
-      const g2 = parseInt(colorPair.end.slice(3, 5), 16);
-      const b2 = parseInt(colorPair.end.slice(5, 7), 16);
-      
-      const r = Math.round(r1 + (r2 - r1) * segmentPosition);
-      const g = Math.round(g1 + (g2 - g1) * segmentPosition);
-      const b = Math.round(b1 + (b2 - b1) * segmentPosition);
-      
-      const segmentColor = `rgb(${r}, ${g}, ${b})`;
-      
-      segments.push(
-        <Polyline
-          key={`connection-${index}-segment-${i}`}
-          positions={positions.slice(startIdx, endIdx + 1)}
-          pathOptions={{
-            color: segmentColor,
-            opacity: segmentOpacity,
-            weight: 2.5 * intensity, // Increased weight for better visibility of dots
-            lineJoin: 'round',
-            lineCap: 'round',
-            dashArray: dashPattern, // Add dash pattern for dotted line
-            className: 'connection-line-glow',
-          }}
-        />
-      );
-    }
-  }
-  
-  // Add a subtle glow effect with a wider, more transparent line underneath
   const glowLine = (
     <Polyline
       key={`connection-${index}-glow`}
       positions={positions}
       pathOptions={{
-        color: colorPair.start,
-        opacity: baseOpacity * 0.4, // Further reduced glow opacity for more transparency
-        weight: 10 * intensity, // Reduced glow weight for subtler effect
+        color: lineColor, // Glow with the same lineColor
+        opacity: baseOpacity * 0.4, 
+        weight: 10 * intensity, 
         lineJoin: 'round',
         lineCap: 'round',
-        dashArray: dashPattern, // Add dash pattern for dotted glow
+        dashArray: dashPattern,
         className: 'connection-line-base',
       }}
     />
   );
   
-  // Return segments with a proper key for the fragment
   return (
     <React.Fragment key={`connection-group-${index}`}>
       {glowLine}
@@ -251,8 +176,7 @@ function generateCurvedPath(from: [number, number], to: [number, number], steps:
 export function ConnectionLines({ 
   connections, 
   maxConnections = DEFAULT_MAX_CONNECTIONS,
-  animationSpeed = 1,
-  colorScheme = 'modern'
+  animationSpeed = 1
 }: ConnectionLinesProps) {
   // If there are no connections, render nothing.
   if (!connections || connections.length === 0) {
@@ -268,89 +192,18 @@ export function ConnectionLines({
   const animationIntervalRef = useRef<number | null>(null);
   const pulseIntervalRef = useRef<number | null>(null);
   
-  // Selected color palette based on the colorScheme prop
-  const colorPalette = colorPalettes[colorScheme] || colorPalettes.cyberpunk;
-  
   // State to track if connections are within view
   const [isVisible, setIsVisible] = useState(true);
   
-  // Limit the number of connections to render for performance
-  const { limitedConnections, connectionPaths } = useMemo(() => {
-    // Filter out invalid connections first
-    const validConnections = connections.filter(
-      conn => Array.isArray(conn.from) && Array.isArray(conn.to) && 
-              conn.from.length === 2 && conn.to.length === 2 &&
-              !isNaN(conn.from[0]) && !isNaN(conn.from[1]) && 
-              !isNaN(conn.to[0]) && !isNaN(conn.to[1])
-    );
-    
-    // Group connections by their "from" coordinates (projects)
-    const projectGroups = validConnections.reduce((groups, conn) => {
-      // Generate a key for this project's location
-      const key = `${conn.from[0].toFixed(4)}-${conn.from[1].toFixed(4)}`;
-      
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(conn);
-      return groups;
-    }, {} as Record<string, Connection[]>);
-    
-    // Ensure at least one connection from each project is selected
-    let guaranteedConnections: Connection[] = [];
-    Object.values(projectGroups).forEach(group => {
-      if (group.length > 0) {
-        // Sort by beneficiaries within group
-        const sortedGroup = [...group].sort((a, b) => {
-          const beneA = a.from_project_indirect_beneficiaries || 0;
-          const beneB = b.from_project_indirect_beneficiaries || 0;
-          return beneB - beneA;
-        });
-        
-        // Add the most important connection from each project
-        guaranteedConnections.push(sortedGroup[0]);
-      }
-    });
-    
-    // If we have space left for more connections
-    let remainingSlots = maxConnections - guaranteedConnections.length;
-    let additionalConnections: Connection[] = [];
-    
-    if (remainingSlots > 0) {
-      // Get all connections that aren't already guaranteed
-      const remainingConnections = validConnections.filter(conn => 
-        !guaranteedConnections.some(gConn => 
-          gConn.from[0] === conn.from[0] && 
-          gConn.from[1] === conn.from[1] && 
-          gConn.to[0] === conn.to[0] && 
-          gConn.to[1] === conn.to[1]
-        )
-      );
-      
-      // Prioritize by beneficiaries
-      const sortedRemaining = [...remainingConnections].sort((a, b) => {
-        const beneA = a.from_project_indirect_beneficiaries || 0;
-        const beneB = b.from_project_indirect_beneficiaries || 0;
-        return beneB - beneA;
-      });
-      
-      // Add as many as we have space for
-      additionalConnections = sortedRemaining.slice(0, remainingSlots);
-    }
-    
-    // Combine guaranteed and additional connections
-    const selectedConnections = [...guaranteedConnections, ...additionalConnections];
-    
-    // Pre-calculate paths for better performance
-    const paths = selectedConnections.map(connection => 
-      generateCurvedPath(connection.from, connection.to, DEFAULT_CURVE_STEPS)
-    );
-    
-    return { 
-      limitedConnections: selectedConnections,
-      connectionPaths: paths
-    };
+  // Filter and memoize connections to render
+  const connectionsToRender = useMemo(() => {
+    return connections.slice(0, maxConnections);
   }, [connections, maxConnections]);
+
+  // Generate paths for visible connections
+  const generatedPaths = useMemo(() => {
+    return connectionsToRender.map(conn => generateCurvedPath(conn.from, conn.to));
+  }, [connectionsToRender]);
   
   // Check if connections are within the current map view
   useEffect(() => {
@@ -359,7 +212,7 @@ export function ConnectionLines({
     const checkVisibility = () => {
       const bounds = map.getBounds();
       // Consider connections visible if at least one endpoint is in view
-      const anyVisible = limitedConnections.some(conn => {
+      const anyVisible = connectionsToRender.some(conn => {
         return bounds.contains([conn.from[0], conn.from[1]]) || 
                bounds.contains([conn.to[0], conn.to[1]]);
       });
@@ -377,7 +230,7 @@ export function ConnectionLines({
       map.off('moveend', checkVisibility);
       map.off('zoomend', checkVisibility);
     };
-  }, [map, limitedConnections]);
+  }, [map, connectionsToRender]);
   
   // Animation effect for line tracing with adjusted timing
   useEffect(() => {
@@ -437,38 +290,35 @@ export function ConnectionLines({
   
   return (
     <>
-      {limitedConnections.map((connection, index) => (
+      {connectionsToRender.map((connection, index) => (
         <ConnectionGroup
           key={connection.id || `connection-${index}`}
           connection={connection}
-          paths={connectionPaths[index]}
+          paths={generatedPaths[index]}
           index={index}
           animationPhase={animationPhase}
           pulsePhase={pulsePhase}
-          colorPalette={colorPalette}
         />
       ))}
       
       {/* Add CSS for glow effect */}
       <style jsx global>{`
         .leaflet-pane path.connection-line-glow {
-          filter: drop-shadow(0 0 3px ${colorPalette[0].start}80) drop-shadow(0 0 7px ${colorPalette[1 % colorPalette.length].start}60) drop-shadow(0 0 10px ${colorPalette[2 % colorPalette.length].start}40);
           transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
         }
         .leaflet-pane path.connection-line-base {
-          filter: blur(3px);
           transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
         }
         
         /* Create a subtle pulsing effect for the glow */
-        @keyframes pulse-glow {
+        /* @keyframes pulse-glow {
           0% { filter: drop-shadow(0 0 3px rgba(0, 220, 255, 0.4)) drop-shadow(0 0 6px rgba(0,220,255,0.2)); }
           50% { filter: drop-shadow(0 0 6px rgba(0, 220, 255, 0.6)) drop-shadow(0 0 12px rgba(0,220,255,0.4)); }
           100% { filter: drop-shadow(0 0 3px rgba(0, 220, 255, 0.4)) drop-shadow(0 0 6px rgba(0,220,255,0.2)); }
-        }
+        } */
         
         .leaflet-pane path.connection-line-glow:hover {
-          animation: pulse-glow 1.5s infinite;
+          /* animation: pulse-glow 1.5s infinite; */
           opacity: 0.7 !important; /* Reduced from 0.9 to 0.7 for more transparency on hover */
         }
       `}</style>

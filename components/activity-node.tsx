@@ -6,24 +6,23 @@ import L from "leaflet"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Users } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { getProjectColorByBeneficiaries } from "@/lib/colors"
 
-// Updated color function based on INDIRECT beneficiaries and user's tiers
-const getBeneficiaryColor = (indirect_beneficiaries: number): string => {
-  if (indirect_beneficiaries <= 100) return "#FF00FF"; // 
-  if (indirect_beneficiaries <= 500) return "#0074D9"; // Blue
-  if (indirect_beneficiaries >= 1000) return "#FF4136"; // red
-  return "#FFDC00"; // Gold/Yellow for > 1000
-};
-
-// getMarkerIcon now uses indirect_beneficiaries for color
-const getMarkerIcon = (indirectBeneficiaries: number, isHovered: boolean, isMobile: boolean, projectTitle: string) => {
+// getMarkerIcon now uses total beneficiaries for color, and indirect for size factor for now
+const getMarkerIcon = (
+  directBeneficiaries: number, 
+  indirectBeneficiaries: number, 
+  isHovered: boolean, 
+  isMobile: boolean, 
+  projectTitle: string
+) => {
   const scaleFactor = isMobile ? 0.7 : 1;
-  // Size can still be based on direct or indirect, let's use indirect for consistency with color
+  // Size can still be based on direct or indirect, let's use indirect for consistency (or total if preferred)
   const beneficiaryFactor = Math.min(Math.max(indirectBeneficiaries / 10000, 0.5), 5); 
   const baseSize = (15 + beneficiaryFactor * 10) * scaleFactor;
   const size = isHovered ? baseSize * 1.2 : baseSize;
 
-  const markerColor = getBeneficiaryColor(indirectBeneficiaries);
+  const markerColor = getProjectColorByBeneficiaries(directBeneficiaries, indirectBeneficiaries);
   const sanitizedProjectTitle = projectTitle.replace(/[^a-zA-Z0-9]/g, '');
 
   const pulseAnimation = isHovered
@@ -84,8 +83,8 @@ interface ActivityNodeProps {
   longitude: number;
   project_title: string;
   country_province: string;
-  direct_beneficiaries: number; // Keep direct for display
-  indirect_beneficiaries: number; // Use indirect for color/sizing
+  direct_beneficiaries: number;
+  indirect_beneficiaries: number;
 }
 
 export function ActivityNode({ 
@@ -93,16 +92,20 @@ export function ActivityNode({
   longitude, 
   project_title, 
   country_province, 
-  direct_beneficiaries, // direct is kept for display text
-  indirect_beneficiaries // indirect is now used for color and icon sizing
+  direct_beneficiaries,
+  indirect_beneficiaries
 }: ActivityNodeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  // Use indirect_beneficiaries for icon generation (color and size factor)
-  const icon = getMarkerIcon(indirect_beneficiaries, isHovered, isMobile, project_title);
-  // Use indirect_beneficiaries for badge color
-  const badgeColor = getBeneficiaryColor(indirect_beneficiaries);
+  const icon = getMarkerIcon(
+    direct_beneficiaries, 
+    indirect_beneficiaries, 
+    isHovered, 
+    isMobile, 
+    project_title
+  );
+  const badgeColor = getProjectColorByBeneficiaries(direct_beneficiaries, indirect_beneficiaries);
 
   return (
     <Marker

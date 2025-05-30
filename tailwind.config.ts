@@ -91,12 +91,48 @@ const config: Config = {
           from: { opacity: "1" },
           to: { opacity: "0" },
         },
+        "noise-animation": {
+          "0%": { transform: "translate(0, 0)" },
+          "10%": { transform: "translate(-5%, -5%)" },
+          "20%": { transform: "translate(-10%, 5%)" },
+          "30%": { transform: "translate(5%, -10%)" },
+          "40%": { transform: "translate(-5%, 15%)" },
+          "50%": { transform: "translate(-10%, 5%)" },
+          "60%": { transform: "translate(15%, 0)" },
+          "70%": { transform: "translate(0, 10%)" },
+          "80%": { transform: "translate(-15%, 0)" },
+          "90%": { transform: "translate(10%, 5%)" },
+          "100%": { transform: "translate(5%, 0)" },
+        },
+        "progress": {
+          "0%": { width: "0%" },
+          "50%": { width: "60%" },
+          "70%": { width: "75%" },
+          "100%": { width: "100%" }
+        },
+        "pulse-slow": {
+          "0%, 100%": { opacity: "0.6" },
+          "50%": { opacity: "0.2" }
+        },
+        "pulse-slow-delay": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.1" }
+        },
+        "pulse-slow-delay-2": {
+          "0%, 100%": { opacity: "0.3" },
+          "50%": { opacity: "0.05" }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-in-out",
         "fade-out": "fade-out 0.3s ease-in-out",
+        "noise-bg": "noise-animation 8s steps(10) infinite",
+        "progress": "progress 2s ease-in-out forwards",
+        "pulse-slow": "pulse-slow 4s ease-in-out infinite",
+        "pulse-slow-delay": "pulse-slow-delay 5s ease-in-out infinite",
+        "pulse-slow-delay-2": "pulse-slow-delay-2 6s ease-in-out infinite",
       },
       transitionProperty: {
         'height': 'height',
@@ -106,7 +142,7 @@ const config: Config = {
   },
   plugins: [
     require("tailwindcss-animate"),
-    function({ addUtilities }) {
+    function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
       const newUtilities = {
         '.touch-callout-none': {
           '-webkit-touch-callout': 'none',

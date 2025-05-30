@@ -4,18 +4,12 @@ import { useEffect, useRef, useState } from "react"
 import { useMap } from "react-leaflet"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { ProjectData } from "@/lib/types";
-
-// Color function with better visibility
-const getBeneficiaryColor = (indirect_beneficiaries: number): string => {
-  if (indirect_beneficiaries <= 100) return "#FF00FF"; // Magenta for smallest tier
-  if (indirect_beneficiaries <= 500) return "#0074D9"; // Blue for medium tier
-  if (indirect_beneficiaries >= 1000) return "#FF4136"; // Red for largest tier
-  return "#FFDC00"; // Gold/Yellow for intermediate tier
-};
+import { getProjectColorByBeneficiaries } from "@/lib/colors"; // Import the centralized color function
 
 interface Connection {
   from: [number, number];
   to: [number, number];
+  from_project_direct_beneficiaries: number; // Added direct beneficiaries
   from_project_indirect_beneficiaries: number;
 }
 
@@ -172,7 +166,10 @@ export function ParticleEffect({ projects, connections }: ParticleEffectProps) {
             const particleFrequency = isMobile ? 0.2 : 0.3;
             if (Math.random() < particleFrequency) {
               // Get color based on the source project's beneficiaries
-              const particleColor = getBeneficiaryColor(connection.from_project_indirect_beneficiaries);
+              const particleColor = getProjectColorByBeneficiaries(
+                connection.from_project_direct_beneficiaries,
+                connection.from_project_indirect_beneficiaries
+              );
               
               // Create a particle with better visibility
               particles.push({

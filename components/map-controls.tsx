@@ -3,21 +3,64 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Layers, Grid, X, Maximize, Minimize, Search, ArrowRight, MapPin, List } from "lucide-react"
+import { Layers, Grid, X, Maximize, Minimize, Search, ArrowRight, MapPin, List, Globe, Palette } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import L from "leaflet"
 import { ProjectData } from "@/lib/types"
 import { allProjectsData } from "@/lib/project-data"
+import Link from "next/link"
+
+// Define color constants
+const COLOR_BLUE = "#3b82f6";
+const COLOR_GREEN = "#22c55e";
+const COLOR_YELLOW = "#eab308";
+const COLOR_RED = "#ef4444";
+const COLOR_DEFAULT = "#a855f7";
+
+interface LegendItem {
+  color: string;
+  label: string;
+  description: string;
+}
+
+const legendItems: LegendItem[] = [
+  {
+    color: COLOR_BLUE,
+    label: "1 - 100",
+    description: "Projects with 1 to 100 beneficiaries.",
+  },
+  {
+    color: COLOR_GREEN,
+    label: "101 - 500",
+    description: "Projects with 101 to 500 beneficiaries.",
+  },
+  {
+    color: COLOR_YELLOW,
+    label: "501 - 1000",
+    description: "Projects with 501 to 1000 beneficiaries.",
+  },
+  {
+    color: COLOR_RED,
+    label: "> 1000",
+    description: "Projects with more than 1000 beneficiaries.",
+  },
+  {
+    color: COLOR_DEFAULT,
+    label: "0 or N/A",
+    description: "Projects with no beneficiaries or data not available.",
+  },
+];
 
 // Define Props interface
 interface MapControlsProps {
-  onToggleHexGrid: () => void;
-  showHexGrid: boolean;
+  onToggleHexGrid?: () => void;
+  showHexGrid?: boolean;
+  isGlobeView?: boolean;
 }
 
 // Apply Props interface to the component signature
-export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) {
+export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false }: MapControlsProps) {
   const [showInfo, setShowInfo] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
@@ -27,6 +70,7 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [lastUpdatedDate, setLastUpdatedDate] = useState("");
+  const [showLegend, setShowLegend] = useState(false);
 
   // Use ref to prevent unnecessary re-renders in strict mode
   const dateInitializedRef = useRef(false);
@@ -100,11 +144,11 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
       if (!mapContainer) return;
       
       // Try accessing the map through the Leaflet internal structure
-      // @ts-ignore - Leaflet typings are complex, we know this works
+      // @ts-expect-error - Leaflet typings are complex, we know this works
       const map = L.DomUtil.getLeafletElement?.(mapContainer) || 
-                  // @ts-ignore - Fallback method to find map instance
+                  // @ts-expect-error - Fallback method to find map instance
                   mapContainer._leaflet_map ||
-                  // @ts-ignore - Another fallback
+                  // @ts-expect-error - Another fallback
                   window.leafletMap;
       
       if (map && typeof map.setView === 'function') {
@@ -129,6 +173,11 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
     }
   }
 
+  // Toggle the color legend
+  const toggleLegend = () => {
+    setShowLegend(!showLegend);
+  }
+
   return (
     <>
       <div className={`absolute ${isMobile ? "top-20 left-4" : "top-20 right-4"} z-[500] flex flex-col gap-2`}>
@@ -150,6 +199,57 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
           </Tooltip>
         </TooltipProvider>
 
+        {!isGlobeView && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-md bg-black/70 border border-cyan-900/50 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                  onClick={() => onToggleHexGrid?.()}
+                >
+                  {showHexGrid ? <Grid className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side={isMobile ? "right" : "left"}>
+                <p>{showHexGrid ? "Hide Hex Grid" : "Show Hex Grid"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {isGlobeView ? (
+                <Link href="/">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="w-10 h-10 rounded-md bg-black/70 border border-cyan-900/50 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                  >
+                    <MapPin className="h-5 w-5" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/globe">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="w-10 h-10 rounded-md bg-black/70 border border-cyan-900/50 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                  >
+                    <Globe className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
+            </TooltipTrigger>
+            <TooltipContent side={isMobile ? "right" : "left"}>
+              <p>{isGlobeView ? "Switch to 2D Map View" : "Switch to 3D Globe View"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -157,13 +257,13 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
                 variant="outline"
                 size="icon"
                 className="w-10 h-10 rounded-md bg-black/70 border border-cyan-900/50 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
-                onClick={() => onToggleHexGrid()}
+                onClick={toggleLegend}
               >
-                {showHexGrid ? <Grid className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
+                <Palette className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side={isMobile ? "right" : "left"}>
-              <p>{showHexGrid ? "Hide Hex Grid" : "Show Hex Grid"}</p>
+              <p>{showLegend ? "Hide Color Legend" : "Show Color Legend"}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -186,6 +286,42 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      {/* Color Legend Panel */}
+      {showLegend && (
+        <div className="fixed top-32 right-16 z-40 bg-gray-900 text-white p-4 rounded-lg border-2 border-purple-400 shadow-xl w-64">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-bold text-center text-pink-400">
+              COLOR LEGEND
+            </h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-gray-400 hover:text-white"
+              onClick={() => setShowLegend(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="space-y-2">
+            {legendItems.map((item, index) => (
+              <div 
+                key={index}
+                className="flex items-center gap-3 p-2 bg-gray-800 rounded"
+              >
+                <div
+                  className="w-4 h-4 rounded border border-gray-600"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-sm text-gray-300">
+                  {item.label} Beneficiaries
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search Panel */}
       {showSearch && (
@@ -305,10 +441,11 @@ export function MapControls({ onToggleHexGrid, showHexGrid }: MapControlsProps) 
             <p>• Click on markers to view activity details</p>
             <p>• Glowing lines represent connections between initiatives</p>
             <p>• Use zoom controls to navigate the map</p>
-            <p>• Toggle the hex grid for different visualization</p>
+            {!isGlobeView && <p>• Toggle the hex grid for different visualization</p>}
+            <p>• {isGlobeView ? "Switch to 2D Map" : "Switch to 3D Globe"} view using the icon</p>
             <p>• Search for projects by name or location</p>
             <p>• View all projects using the list button in search</p>
-            <p>• Tap the compass to reset the map view</p>
+            <p>• View the color legend to understand beneficiary markers</p>
           </div>
           <div className="mt-3 pt-3 border-t border-cyan-900/30 text-xs text-gray-400">
             <p>EcoTrack Global v1.0</p>

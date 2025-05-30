@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
-import { ProjectData } from "@/lib/types"
-import { ConnectionLines } from "@/components/connection-lines"
+import { ProjectData } from "@/models/project-data"
+import { ConnectionLines } from "@/app/globe/components/connection-lines"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface Connection {

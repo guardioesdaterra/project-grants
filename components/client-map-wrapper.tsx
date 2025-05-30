@@ -46,6 +46,21 @@ export default function ClientMapWrapper({ projects }: ClientMapWrapperProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Fix Leaflet default icon missing in production build
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const L = require('leaflet');
+      
+      delete L.Icon.Default.prototype._getIconUrl;
+      
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: '/marker-icon-2x.png',
+        iconUrl: '/marker-icon.png',
+        shadowUrl: '/marker-shadow.png',
+      });
+    }
+  }, []);
+
   if (!isClientReady) {
     return (
       <div className="w-full h-screen bg-black flex items-center justify-center text-white text-xl">

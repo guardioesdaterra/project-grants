@@ -13,7 +13,7 @@ const inter = Inter({
 
 export const metadata = {
   title: "Earth Guardians | Project Grants",
-  description: "Track granteds socioenvironmental initiatives worldwide",
+  description: "Track granteds socioenvironmental initiatives by Earth Guardians, worldwide",
   manifest: "/manifest.json",
   themeColor: "#000000",
   viewport: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes",
@@ -26,10 +26,10 @@ export const metadata = {
     type: "website",
     locale: "en_US",
     title: "Earth Guardians | Project Grants",
-    description: "Track environmental initiatives worldwide",
+    description: "Track environmental initiatives by Earth Guardians, worldwide",
     siteName: "Earth Guardians",
   },
-  generator: 'Hautly'
+  generator: 'Tupã Levi | 2025'
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         
         {/* Preconnect to external resources */}
-        <link rel="preconnect" href="https://basemaps.cartocdn.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://api.maptiler.com" crossOrigin="anonymous" />
         
         {/* Disable iOS touch callout */}
         <style>{`
