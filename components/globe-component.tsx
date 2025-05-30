@@ -8,6 +8,8 @@ import { GlobalStats } from '@/components/global-stats'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type maplibregl from 'maplibre-gl'
 import Link from "next/link"
+import Image from 'next/image'
+import { OptimizedBackgroundImage } from '@/components/ui/optimized-background-image'
 
 const MAPTILER_API_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
 
@@ -740,28 +742,38 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
       <div className="absolute inset-0 pointer-events-none z-20" style={{ boxShadow: 'inset 0 0 150px 20px rgba(0,0,0,0.7)' }}></div>
       
       {/* Hex grid overlay */}
-      {showHexGrid && !isMobile && (
-        <div 
+      {showHexGrid && (
+        <OptimizedBackgroundImage 
+          src="/grid-overlay.png"
+          alt="Grid Overlay"
+          width={1920}
+          height={1080}
           className="absolute inset-0 pointer-events-none z-[450] opacity-5"
-          style={{
-            backgroundImage: 'url(/grid-overlay.png)',
-          }}
-        ></div>
+        />
       )}
       
       {/* Noise overlay */}
-      {!isMobile && (
-        <div 
-          className="absolute inset-0 pointer-events-none z-30 opacity-[0.02] animate-noise-bg"
-          style={{
-            backgroundImage: 'url(/noise.png)',
-            backgroundRepeat: 'repeat',
-          }}
-        ></div>
+      {(
+        <OptimizedBackgroundImage 
+          src="/noise.png"
+          alt="Noise Texture"
+          width={512}
+          height={512}
+          className="absolute inset-0 pointer-events-none z-30 opacity-[0.05] animate-noise-bg"
+          style={{ backgroundRepeat: 'repeat' }}
+        />
       )}
       
       {/* Scanline overlay */}
-      {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-[0.02] pointer-events-none z-40"></div>}
+      {(
+        <OptimizedBackgroundImage 
+          src="/scanline.gif"
+          alt="Scanline Effect"
+          width={512}
+          height={512}
+          className="absolute inset-0 pointer-events-none opacity-[0.01] z-40"
+        />
+      )}
       
       {/* Map container */}
       <div ref={containerRef} className="w-full h-full" />
@@ -769,18 +781,22 @@ export function GlobeComponent({ projects = [], showHexGrid = true }: GlobeCompo
       {/* White Banner - Position differently on mobile vs desktop */}
       {isMobile ? (
         <div className="opacity-50 absolute top-3 left-1/2 -translate-x-1/2 z-[999990] pointer-events-none">
-          <img 
+          <Image 
             src="/white-banner.png" 
             alt="Earth Guardians" 
+            width={240}
+            height={120}
             className="h-auto w-auto max-h-[12vh] object-contain"
           />
         </div>
       ) : (
-        <div className="opacity-50 absolute left-[-15vh] top-1/2 -translate-y-1/2 z-[999] pointer-events-none">
-          <img 
+        <div className="opacity-50 absolute -left-[10vh] top-1/2 -translate-y-1/2 z-[999] pointer-events-none">
+          <Image 
             src="/white-banner.png" 
             alt="Earth Guardians" 
-            className="h-auto w-auto max-h-[15vh] object-contain rotate-[-90deg]"
+            width={720}
+            height={360}
+            className="h-auto w-auto max-h-[15vh] rotate-[-90deg]"
           />
         </div>
       )}

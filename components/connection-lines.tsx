@@ -25,8 +25,8 @@ interface ConnectionLinesProps {
 }
 
 // Default performance configuration
-const DEFAULT_MAX_CONNECTIONS = 60;
-const DEFAULT_CURVE_STEPS = 21;
+const DEFAULT_MAX_CONNECTIONS = 80;
+const DEFAULT_CURVE_STEPS = 71;
 const DEFAULT_ANIMATION_INTERVAL = 80;
 
 // Memoized helper component for individual connection group

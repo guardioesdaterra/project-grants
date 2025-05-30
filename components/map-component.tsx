@@ -12,6 +12,8 @@ import { GlobalStats } from "@/components/global-stats"
 import { ProjectData } from "@/lib/types"
 import { ConnectionLines } from "@/components/connection-lines"
 import { allProjectsData } from "@/lib/project-data"
+import Image from 'next/image'
+import { OptimizedBackgroundImage } from '@/components/ui/optimized-background-image'
 
 const MAPTILER_API_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
 
@@ -392,48 +394,59 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
 
       {/* Fallback hex grid - will display even if the main one fails */}
       {showHexGrid && <FallbackHexGrid />}
-      <div 
-          className="absolute inset-0 pointer-events-none opacity-5 z-[451]"
-          style={{
-            backgroundImage: 'url(/grid-overlay.png)',
-          }}
-        ></div>
+      <OptimizedBackgroundImage 
+        src="/grid-overlay.png"
+        alt="Grid Overlay"
+        width={1920}
+        height={1080}
+        className="absolute inset-0 pointer-events-none opacity-5 z-[451]"
+      />
 
-
-      {/* White Banner - Position differently on mobile vs desktop */}
-      {isMobile ? (
-        <div className="opacity-50 absolute top-3 left-1/2 -translate-x-1/2 z-[990] pointer-events-none">
-            <img 
+       {/* White Banner - Position differently on mobile vs desktop */}
+       {isMobile ? (
+        <div className="opacity-50 absolute top-3 left-1/2 -translate-x-1/2 z-[999990] pointer-events-none">
+          <Image 
             src="/white-banner.png" 
             alt="Earth Guardians" 
+            width={240}
+            height={120}
             className="h-auto w-auto max-h-[12vh] object-contain"
-            />
+          />
         </div>
       ) : (
-        <div className="opacity-50 absolute left-[-15vh] top-1/2 -translate-y-1/2 z-[990] pointer-events-none">
-          <img 
+        <div className="opacity-50 absolute -left-[10vh] top-1/2 -translate-y-1/2 z-[999] pointer-events-none">
+          <Image 
             src="/white-banner.png" 
             alt="Earth Guardians" 
-            className="h-auto w-auto max-h-[15vh] object-contain rotate-[-90deg]"
+            width={720}
+            height={360}
+            className="h-auto w-auto max-h-[15vh] rotate-[-90deg]"
           />
         </div>
       )}
 
       {/* Noise Overlay - ensure noise.png is in public folder */}
-      {!isMobile && 
-        <div 
-          className="absolute inset-0 pointer-events-none z-[401] opacity-[0.010] animate-noise-bg"
-          style={{
-            backgroundImage: 'url(/noise.png)',
-            backgroundRepeat: 'repeat',
-          }}
-        ></div>
+      {
+        <OptimizedBackgroundImage 
+          src="/noise.png"
+          alt="Noise Texture"
+          width={512}
+          height={512}
+          className="absolute inset-0 pointer-events-none z-[401] opacity-[0.02] filter-contrast-1000 animate-noise-bg"
+          style={{ backgroundRepeat: 'repeat' }}
+        />
       }
 
-
-
       {/* Scanline overlay - disabled on mobile */}
-      {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-[0.015] pointer-events-none z-[402]"></div>}
+      {
+        <OptimizedBackgroundImage 
+          src="/scanline.gif"
+          alt="Scanline Effect"
+          width={512}
+          height={512}
+          className="absolute inset-0 pointer-events-none opacity-[0.015] z-[402]"
+        />
+      }
 
       {/* Animated background elements - simplified on mobile */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[398]">

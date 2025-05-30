@@ -11,7 +11,7 @@ interface GlobalStatsProps {
 }
 
 export function GlobalStats({ projects }: GlobalStatsProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   const { activeInitiatives, countriesCount, totalDirectBeneficiaries, totalIndirectBeneficiaries } = useMemo(() => {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { OptimizedBackgroundImage } from "@/components/ui/optimized-background-image"
 
 export function MapBackground() {
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -16,17 +17,26 @@ export function MapBackground() {
 
       {/* Noise Overlay - ensure noise.png is in public folder */}
       {!isMobile && 
-        <div 
+        <OptimizedBackgroundImage 
+          src="/noise.png"
+          alt="Noise Texture"
+          width={512}
+          height={512}
           className="absolute inset-0 pointer-events-none z-[401] animate-noise-bg"
-          style={{
-            backgroundImage: 'url(/noise.png)',
-            backgroundRepeat: 'repeat',
-          }}
-        ></div>
+          style={{ backgroundRepeat: 'repeat' }}
+        />
       }
 
       {/* Scanline overlay - disabled on mobile */}
-      {!isMobile && <div className="absolute inset-0 bg-[url('/scanline.gif')] opacity-[0.05] pointer-events-none z-[999999999999]"></div>}
+      {!isMobile && 
+        <OptimizedBackgroundImage 
+          src="/scanline.gif"
+          alt="Scanline Effect"
+          width={512}
+          height={512}
+          className="absolute inset-0 opacity-[0.05] pointer-events-none z-[999999999999]"
+        />
+      }
 
       {/* Animated background elements - simplified on mobile */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[398]">
