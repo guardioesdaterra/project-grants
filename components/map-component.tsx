@@ -382,6 +382,9 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
             max-width: 90vw;
             font-size: 14px;
           }
+          .leaflet-control-zoom {
+            display: none !important;
+          }
         }
       `}</style>
 
@@ -485,7 +488,8 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
           attribution='EARTH GUARDIANS @ 2025'
         />
 
-        <ZoomControl position="bottomleft" />
+        {/* Only show zoom control on non-mobile devices */}
+        {!isMobile && <ZoomControl position="bottomleft" />}
         <MapController />
 
         <ConnectionLines connections={dynamicConnections} />
