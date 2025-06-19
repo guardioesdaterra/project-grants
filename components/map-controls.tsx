@@ -323,7 +323,6 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
         </TooltipProvider>
       </div>
 
-      {/* Color Legend Panel */}
       {showLegend && (
         <div className="fixed top-32 right-16 z-40 bg-gray-900 text-white p-4 rounded-lg border-2 border-purple-400 shadow-xl w-64">
           <div className="flex justify-between items-center mb-3">
@@ -361,6 +360,9 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
               </div>
             ))}
           </div>
+        </div>
+      )}
+      
       {/* Search Panel */}
       {showSearch && (
         <div 
