@@ -502,7 +502,11 @@ export function MapComponent({ projects = allProjectsData }: MapComponentProps) 
             project_title={project.project_title}
             country_province={project.country_province}
             direct_beneficiaries={project.direct_beneficiaries}
-            indirect_beneficiaries={project.indirect_beneficiaries}
+            indirect_beneficiaries={
+              project.indirect_beneficiaries === 0
+                ? "Project In-Progress"
+                : project.indirect_beneficiaries
+            }
           />
         ))}
 
