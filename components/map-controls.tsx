@@ -339,7 +339,6 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
           <div className="space-y-2">
             {legendItems.map((item, index) => (
               <div 
@@ -350,21 +349,18 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
                   className="w-4 h-4 rounded border border-gray-600"
                   style={{ backgroundColor: item.color }}
                 />
-                  {!item.label.includes("Progress") && (
-                    <span className="text-sm text-gray-300">
-                      {item.label} beneficiaries
-                    </span>
+                {!item.label.includes("Progress") ? (
+                  <span className="text-sm text-gray-300">
+                    {item.label} beneficiaries
+                  </span>
                 ) : (
-                    <span className="text-sm text-gray-300">
-                      Project In-Progress
-                    </span>
-                 )}
+                  <span className="text-sm text-gray-300">
+                    Project In-Progress
+                  </span>
+                )}
               </div>
             ))}
           </div>
-        </div>
-      )}
-
       {/* Search Panel */}
       {showSearch && (
         <div 
