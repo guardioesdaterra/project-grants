@@ -354,7 +354,11 @@ export function MapControls({ onToggleHexGrid, showHexGrid, isGlobeView = false 
                     <span className="text-sm text-gray-300">
                       {item.label} beneficiaries
                     </span>
-                  )}
+                ) : (
+                    <span className="text-sm text-gray-300">
+                      Project In-Progress
+                    </span>
+                 )}
               </div>
             ))}
           </div>
