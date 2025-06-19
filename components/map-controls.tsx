@@ -46,8 +46,8 @@ const legendItems: LegendItem[] = [
   },
   {
     color: COLOR_DEFAULT,
-    label: "0 or N/A",
-    description: "Projects with no beneficiaries or data not available.",
+    label: "Projects In-Progress",
+    description: "Projects In-Progress",
   },
 ];
 
